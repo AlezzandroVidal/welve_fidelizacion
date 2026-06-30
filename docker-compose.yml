@@ -1,0 +1,80 @@
+name: welve
+
+services:
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - welve_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── Backend (FastAPI) ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      target: production
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    ports:
+      - "8000:8000"
+    networks:
+      - welve_net
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s   # era 10s
+
+  # ── Celery Worker ────────────────────────────────────────────────────────────
+  celery-worker:
+    build:
+      context: ./backend
+      target: production
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    networks:
+      - welve_net
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ── Frontend (React + nginx) ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - welve_net
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  welve_net:
+    driver: bridge

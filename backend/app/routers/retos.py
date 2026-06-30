@@ -1,0 +1,60 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from beanie import PydanticObjectId
+
+from app.core.deps import get_current_empresa
+from app.models.empresa import Empresa
+from app.models.cupon import Cupon
+from app.schemas.reto import RetoCreate, RetoResponse
+from app.services import reto_service
+from beanie.operators import In
+
+router = APIRouter(prefix="/retos", tags=["retos"])
+
+
+def _to_response(r, cupon_nombre: str = None) -> RetoResponse:
+    return RetoResponse(
+        id=str(r.id),
+        empresaId=str(r.empresa_id),
+        nombre=r.nombre,
+        condicionTipo=r.condicion_tipo,
+        condicionValor=r.condicion_valor,
+        fechaInicio=r.fecha_inicio,
+        fechaFin=r.fecha_fin,
+        recompensaCuponId=str(r.recompensa_cupon_id) if r.recompensa_cupon_id else None,
+        recompensaCuponNombre=cupon_nombre,
+        notificado=r.notificado,
+    )
+
+async def _hydrate_retos(retos):
+    if not retos:
+        return []
+    cupon_ids = [r.recompensa_cupon_id for r in retos if r.recompensa_cupon_id]
+    cupones = await Cupon.find(In(Cupon.id, cupon_ids)).to_list() if cupon_ids else []
+    cupmap = {c.id: c.nombre for c in cupones}
+    return [_to_response(r, cupmap.get(r.recompensa_cupon_id)) for r in retos]
+
+
+@router.post("", response_model=RetoResponse, status_code=status.HTTP_201_CREATED)
+async def crear_reto(data: RetoCreate, empresa: Empresa = Depends(get_current_empresa)):
+    reto = await reto_service.crear_reto(empresa.id, data)
+    res = await _hydrate_retos([reto])
+    return res[0]
+
+@router.get("", response_model=list[RetoResponse])
+async def listar_retos(empresa: Empresa = Depends(get_current_empresa)):
+    retos = await reto_service.listar_retos(empresa.id)
+    return await _hydrate_retos(retos)
+
+
+@router.get("/{reto_id}", response_model=RetoResponse)
+async def obtener_reto(reto_id: str, empresa: Empresa = Depends(get_current_empresa)):
+    try:
+        rid = PydanticObjectId(reto_id)
+    except Exception:
+        raise HTTPException(status_code=422, detail="reto_id inválido")
+    reto = await reto_service.obtener_reto(empresa.id, rid)
+    if not reto:
+        raise HTTPException(status_code=404, detail="Reto no encontrado")
+    res = await _hydrate_retos([reto])
+    return res[0]
