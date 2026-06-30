@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Easing custom curves ─────────────────────────────────────────────────── */
+:root {
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ── Custom scrollbar ─────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 92, 252, 0.25) transparent;
+}
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 252, 0.25);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 252, 0.45);
+}
+
+/* ── Tabular nums para métricas (evitar saltos al animar) ─────────────────── */
+.tabular   { font-variant-numeric: tabular-nums; }
+
+/* ── Focus visible global ────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #7C5CFC;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Hover solo en dispositivos pointer fino ─────────────────────────────── */
+@media (hover: none) {
+  .hover-lift:hover { transform: none !important; }
+}
