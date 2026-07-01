@@ -2,10 +2,12 @@ from datetime import datetime, timezone
 
 from beanie import PydanticObjectId
 
-from app.models.enums import EstadoMembresiaCliente
+from app.models.enums import EstadoMembresia, EstadoMembresiaCliente
 from app.models.membresia import Membresia
 from app.models.membresia_cliente import MembresiaCliente
-from app.schemas.membresia import MembresiaClienteCreate, MembresiaClienteUpdate, MembresiaCreate
+from app.schemas.membresia import (
+    MembresiaClienteCreate, MembresiaClienteUpdate, MembresiaCreate, MembresiaUpdate,
+)
 
 
 async def crear_membresia(empresa_id: PydanticObjectId, data: MembresiaCreate) -> Membresia:
@@ -16,6 +18,51 @@ async def crear_membresia(empresa_id: PydanticObjectId, data: MembresiaCreate) -
 
 async def listar_membresias(empresa_id: PydanticObjectId) -> list[Membresia]:
     return await Membresia.find(Membresia.empresa_id == empresa_id).to_list()
+
+
+async def obtener_membresia(empresa_id: PydanticObjectId, membresia_id: PydanticObjectId) -> Membresia | None:
+    return await Membresia.find_one(Membresia.empresa_id == empresa_id, Membresia.id == membresia_id)
+
+
+async def actualizar_membresia(
+    empresa_id: PydanticObjectId, membresia_id: PydanticObjectId, data: MembresiaUpdate,
+) -> Membresia | None:
+    membresia = await obtener_membresia(empresa_id, membresia_id)
+    if not membresia:
+        return None
+    update_data = data.model_dump(exclude_unset=True)
+    if update_data:
+        await membresia.set(update_data)
+    return membresia
+
+
+async def pausar_membresia(empresa_id: PydanticObjectId, membresia_id: PydanticObjectId) -> Membresia | None:
+    membresia = await obtener_membresia(empresa_id, membresia_id)
+    if not membresia:
+        return None
+    await membresia.set({"estado": EstadoMembresia.pausada})
+    return membresia
+
+
+async def activar_membresia(empresa_id: PydanticObjectId, membresia_id: PydanticObjectId) -> Membresia | None:
+    membresia = await obtener_membresia(empresa_id, membresia_id)
+    if not membresia:
+        return None
+    await membresia.set({"estado": EstadoMembresia.activa})
+    return membresia
+
+
+async def eliminar_membresia(empresa_id: PydanticObjectId, membresia_id: PydanticObjectId) -> tuple[bool, str | None]:
+    membresia = await obtener_membresia(empresa_id, membresia_id)
+    if not membresia:
+        return False, "Membresía no encontrada"
+    tiene_suscriptores = await MembresiaCliente.find_one(
+        MembresiaCliente.empresa_id == empresa_id, MembresiaCliente.membresia_id == membresia_id,
+    )
+    if tiene_suscriptores:
+        return False, "No se puede eliminar un plan con clientes suscritos (actuales o pasados) — pausa el plan en su lugar"
+    await membresia.delete()
+    return True, None
 
 
 async def suscribir_cliente(

@@ -31,3 +31,17 @@ export function useDeleteLogo() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["empresa", "me"] }),
   });
 }
+
+export function useCambiarPasswordEmpresa() {
+  return useMutation({
+    mutationFn: ({ passwordActual, passwordNueva }: { passwordActual: string; passwordNueva: string }) =>
+      empresaApi.cambiarPassword(passwordActual, passwordNueva).then(r => r.data),
+  });
+}
+
+export function useDesactivarCuenta() {
+  return useMutation({
+    mutationFn: (nombreConfirmacion: string) =>
+      empresaApi.desactivarCuenta(nombreConfirmacion).then(r => r.data),
+  });
+}

@@ -3,6 +3,7 @@ from beanie import PydanticObjectId
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.cupon import Cupon
 from app.models.empresa import Empresa, RecompensaAutomatica
+from app.models.enums import EstadoEmpresa
 from app.schemas.empresa import EmpresaRegister, RecompensaAutomaticaCreate, RecompensaAutomaticaUpdate
 
 
@@ -37,6 +38,25 @@ async def login_empresa(admin_email: str, admin_password: str) -> tuple[Empresa,
 
 async def obtener_empresa(empresa_id: PydanticObjectId) -> Empresa | None:
     return await Empresa.get(empresa_id)
+
+
+async def cambiar_password(empresa: Empresa, password_actual: str, password_nueva: str) -> tuple[bool, str | None]:
+    """Retorna (ok, error_msg)."""
+    if not verify_password(password_actual, empresa.admin_password_hash):
+        return False, "La contraseña actual no es correcta"
+    empresa.admin_password_hash = hash_password(password_nueva)
+    await empresa.save()
+    return True, None
+
+
+async def desactivar_cuenta(empresa: Empresa) -> None:
+    """Cancelación self-service (Zona de peligro del panel): pasa la empresa a
+    `cancelado`, NO borra datos — `get_current_empresa_admin` ya rechaza login
+    de empresas no activas, así que esto basta para bloquear el acceso.
+    Clientes/cupones/canjes/etc quedan intactos para auditoría o reactivación
+    manual por soporte."""
+    empresa.estado = EstadoEmpresa.cancelado
+    await empresa.save()
 
 
 async def listar_recompensas_automaticas(empresa: Empresa) -> list[dict]:

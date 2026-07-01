@@ -15,24 +15,33 @@ async def crear_canje(
     canal: CanalCanje,
     staff_ref: str | None = None,
     registrar_visita: bool = True,
+    monto: float | None = None,
 ) -> tuple[Canje, str | None]:
     """
     Retorna (canje, error_msg). Si error_msg is not None, el canje no se creó.
     Efecto: incrementa cupon.usos_actuales y, si registrar_visita=True (default),
-    también actualiza visitas_totales/ultima_visita en RelacionClienteEmpresa.
+    también actualiza visitas_totales/monto_acumulado/ultima_visita en
+    RelacionClienteEmpresa.
 
     registrar_visita=False lo usa el flujo de validación de cupón por QR
     (routers/qr.py), que delega el conteo completo de la visita —racha, segmento,
     retos, recompensas automáticas— a visita_service.registrar_visita() para no
     contar la visita dos veces.
+
+    `monto` es el monto de la compra que dio pie a este canje — se valida contra
+    cupon.monto_minimo. Los canjes automáticos (canal=automatico: recompensas por
+    visitas/retos) no representan una compra en curso, así que no exigen monto
+    aunque el cupón tenga mínimo configurado.
     """
     cupon = await cupon_service.obtener_cupon(empresa_id, cupon_id)
     if not cupon:
         return None, "Cupón no encontrado en esta empresa"
 
-    ok, motivo = cupon_service.es_canjeable(cupon)
+    ok, motivo = cupon_service.es_canjeable(cupon, monto)
     if not ok:
         return None, motivo
+    if canal != CanalCanje.automatico and cupon.monto_minimo is not None and monto is None:
+        return None, f"Este cupón requiere registrar el monto de la compra (mínimo S/{cupon.monto_minimo:.2f})"
 
     # Verificar límite por cliente
     if cupon.limite_usos_por_cliente is not None:
@@ -67,6 +76,7 @@ async def crear_canje(
             now = datetime.now(timezone.utc)
             await relacion.set({
                 "visitas_totales": relacion.visitas_totales + 1,
+                "monto_acumulado": relacion.monto_acumulado + monto if monto else relacion.monto_acumulado,
                 "ultima_visita": now,
                 "updated_at": now,
             })

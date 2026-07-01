@@ -32,6 +32,12 @@ export interface CreateMembresiaDto {
   frecuencia: FrecuenciaMembresia;
 }
 
+export interface UpdateMembresiaDto {
+  nombre?: string;
+  precio?: number;
+  beneficio_descripcion?: string;
+}
+
 export interface CreateMembresiaClienteDto {
   membresia_id: string;
   cliente_id: string;
@@ -42,6 +48,10 @@ export interface CreateMembresiaClienteDto {
 export const membresiasApi = {
   listPlanes: () => api.get<Membresia[]>("/membresias"),
   createPlan: (data: CreateMembresiaDto) => api.post<Membresia>("/membresias", data),
+  updatePlan: (id: string, data: UpdateMembresiaDto) => api.patch<Membresia>(`/membresias/${id}`, data),
+  pausarPlan: (id: string) => api.post<Membresia>(`/membresias/${id}/pausar`),
+  activarPlan: (id: string) => api.post<Membresia>(`/membresias/${id}/activar`),
+  deletePlan: (id: string) => api.delete<void>(`/membresias/${id}`),
 
   listSuscripciones: (membresiaId?: string) => 
     api.get<MembresiaCliente[]>("/membresias/suscripciones", { params: { membresia_id: membresiaId } }),

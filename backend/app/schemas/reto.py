@@ -15,6 +15,13 @@ class RetoCreate(BaseModel):
     recompensa_cupon_id: Optional[str] = None
 
 
+class RetoUpdate(BaseModel):
+    nombre: Optional[str] = None
+    condicion_valor: Optional[float] = None
+    fecha_fin: Optional[datetime] = None
+    recompensa_cupon_id: Optional[str] = None
+
+
 class RetoResponse(BaseModel):
     id: str
     empresaId: str
@@ -26,3 +33,4 @@ class RetoResponse(BaseModel):
     recompensaCuponId: Optional[str] = None
     recompensaCuponNombre: Optional[str] = None
     notificado: bool
+    cancelado: bool

@@ -13,6 +13,12 @@ class MembresiaCreate(BaseModel):
     frecuencia: FrecuenciaMembresia = FrecuenciaMembresia.mensual
 
 
+class MembresiaUpdate(BaseModel):
+    nombre: str | None = None
+    precio: float | None = None
+    beneficio_descripcion: str | None = None
+
+
 class MembresiaResponse(BaseModel):
     id: str
     empresaId: str

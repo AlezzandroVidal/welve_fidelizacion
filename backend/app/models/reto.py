@@ -17,6 +17,7 @@ class Reto(Document):
     fecha_fin: datetime
     recompensa_cupon_id: Optional[PydanticObjectId] = None
     notificado: bool = False
+    cancelado: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:

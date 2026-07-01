@@ -6,6 +6,7 @@ from app.models.empresa import Empresa
 from app.schemas.empresa import (
     EmpresaRegister, EmpresaResponse, LoginRequest, TokenResponse,
     EmpresaUpdate, EmpresaLogoUpload,
+    CambiarPasswordEmpresaRequest, DesactivarCuentaRequest, MensajeResponse,
     RecompensaAutomaticaCreate, RecompensaAutomaticaResponse, RecompensaAutomaticaUpdate,
 )
 from app.services import cupon_service, empresa_service
@@ -31,12 +32,21 @@ def _to_response(e: Empresa) -> EmpresaResponse:
         rubro=e.rubro,
         logoUrl=e.logo_url,
         telefonoContacto=e.telefono_contacto,
+        descripcion=e.descripcion,
+        direccion=e.direccion,
+        horario=e.horario,
+        instagram=e.instagram,
+        facebook=e.facebook,
+        tiktok=e.tiktok,
         adminEmail=e.admin_email,
         planSuscripcion=e.plan_suscripcion,
         estado=e.estado,
         rachaDiasRuptura=e.config.racha_dias_ruptura,
         solesPorPunto=e.config.soles_por_punto,
         expiracionMeses=e.config.expiracion_meses,
+        umbralExclusivoCanjes=e.config.umbral_exclusivo_canjes,
+        umbralExclusivoDias=e.config.umbral_exclusivo_dias,
+        diasGraciaExclusivo=e.config.dias_gracia_exclusivo,
     )
 
 
@@ -74,11 +84,48 @@ async def update_config(data: EmpresaUpdate, empresa: Empresa = Depends(get_curr
         empresa.config.soles_por_punto = data.soles_por_punto
     if data.expiracion_meses is not None:
         empresa.config.expiracion_meses = data.expiracion_meses
+    if data.umbral_exclusivo_canjes is not None:
+        empresa.config.umbral_exclusivo_canjes = data.umbral_exclusivo_canjes
+    if data.umbral_exclusivo_dias is not None:
+        empresa.config.umbral_exclusivo_dias = data.umbral_exclusivo_dias
+    if data.dias_gracia_exclusivo is not None:
+        empresa.config.dias_gracia_exclusivo = data.dias_gracia_exclusivo
     if data.logo_url is not None:
         empresa.logo_url = data.logo_url
+    if data.descripcion is not None:
+        empresa.descripcion = data.descripcion
+    if data.direccion is not None:
+        empresa.direccion = data.direccion
+    if data.horario is not None:
+        empresa.horario = data.horario
+    if data.instagram is not None:
+        empresa.instagram = data.instagram
+    if data.facebook is not None:
+        empresa.facebook = data.facebook
+    if data.tiktok is not None:
+        empresa.tiktok = data.tiktok
 
     await empresa.save()
     return _to_response(empresa)
+
+
+@router.post("/me/password", response_model=MensajeResponse)
+async def cambiar_password(data: CambiarPasswordEmpresaRequest, empresa: Empresa = Depends(get_current_empresa)):
+    ok, error = await empresa_service.cambiar_password(empresa, data.password_actual, data.password_nueva)
+    if not ok:
+        raise HTTPException(status_code=400, detail=error)
+    return MensajeResponse(mensaje="Contraseña actualizada")
+
+
+@router.post("/me/desactivar", response_model=MensajeResponse)
+async def desactivar_cuenta(data: DesactivarCuentaRequest, empresa: Empresa = Depends(get_current_empresa)):
+    """Zona de peligro del panel — el frontend ya exige reescribir el nombre
+    exacto de la empresa antes de habilitar el botón; acá se revalida por si
+    alguien pega el request directo."""
+    if data.nombre_confirmacion.strip() != empresa.nombre:
+        raise HTTPException(status_code=400, detail="El nombre no coincide")
+    await empresa_service.desactivar_cuenta(empresa)
+    return MensajeResponse(mensaje="Cuenta desactivada")
 
 
 @router.post("/me/logo", response_model=EmpresaResponse)

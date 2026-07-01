@@ -13,6 +13,7 @@ export interface Reto {
   recompensaCuponId: string | null;
   recompensaCuponNombre: string | null;
   notificado: boolean;
+  cancelado: boolean;
 }
 
 export interface CreateRetoDto {
@@ -24,7 +25,17 @@ export interface CreateRetoDto {
   recompensa_cupon_id?: string | null;
 }
 
+export interface UpdateRetoDto {
+  nombre?: string;
+  condicion_valor?: number;
+  fecha_fin?: string;
+  recompensa_cupon_id?: string | null;
+}
+
 export const retosApi = {
   list: () => api.get<Reto[]>("/retos"),
   create: (data: CreateRetoDto) => api.post<Reto>("/retos", data),
+  update: (id: string, data: UpdateRetoDto) => api.patch<Reto>(`/retos/${id}`, data),
+  cancelar: (id: string) => api.post<Reto>(`/retos/${id}/cancelar`),
+  reactivar: (id: string) => api.post<Reto>(`/retos/${id}/reactivar`),
 };

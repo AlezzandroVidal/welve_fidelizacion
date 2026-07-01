@@ -21,6 +21,11 @@ class EmpresaConfig(BaseModel):
     soles_por_punto: float = 1.0
     expiracion_meses: int = 12
     recompensas_automaticas: list[RecompensaAutomatica] = Field(default_factory=list)
+    # Umbral de segmento exclusivo (PRODUCT.MD 6.4): ventana móvil de canjes, no
+    # visitas de por vida. Ver app/services/segmento_service.py.
+    umbral_exclusivo_canjes: int = 10
+    umbral_exclusivo_dias: int = 90
+    dias_gracia_exclusivo: int = 30
 
 
 class Empresa(Document):
@@ -28,6 +33,12 @@ class Empresa(Document):
     rubro: RubroEmpresa
     logo_url: str | None = None          # data URI base64 o URL externa
     telefono_contacto: str | None = None
+    descripcion: str | None = None
+    direccion: str | None = None
+    horario: str | None = None
+    instagram: str | None = None
+    facebook: str | None = None
+    tiktok: str | None = None
     admin_email: Indexed(EmailStr, unique=True)
     admin_password_hash: str
     plan_suscripcion: PlanSuscripcion = PlanSuscripcion.starter

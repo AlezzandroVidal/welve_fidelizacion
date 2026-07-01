@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { Crown, Plus, Users, UserPlus, PlayCircle, PauseCircle } from "lucide-react";
-import { useMembresias, useSuscripciones, useUpdateSuscripcion } from "../../hooks/useMembresias";
+import { Crown, Plus, Users, UserPlus, PlayCircle, PauseCircle, Pencil, Trash2 } from "lucide-react";
+import {
+  useMembresias, useSuscripciones, useUpdateSuscripcion,
+  usePausarMembresia, useActivarMembresia, useDeleteMembresia,
+} from "../../hooks/useMembresias";
 import { useToast } from "../../hooks/useToast";
 import type { Membresia, EstadoMembresiaCliente, MembresiaCliente } from "../../api/membresias";
 import MembresiaModal from "../../components/admin/membresias/MembresiaModal";
+import EditarMembresiaModal from "../../components/admin/membresias/EditarMembresiaModal";
 import SuscripcionModal from "../../components/admin/membresias/SuscripcionModal";
-import { Table, Badge, Sheet, Toaster } from "../../components/ui";
+import { Table, Badge, Sheet, Modal, Button, Toaster } from "../../components/ui";
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
@@ -38,21 +42,30 @@ function fmtDate(d: string) {
 /* ── Plan Card ───────────────────────────────────────────────────────────── */
 
 function PlanCard({ plan, onSuscribir, onClick }: { plan: Membresia; onSuscribir: () => void; onClick: () => void }) {
+  const pausado = plan.estado === "pausada";
   return (
     <div
       onClick={onClick}
-      className="relative flex flex-col bg-white rounded-card border border-gray-100 shadow-card overflow-hidden cursor-pointer
-        hover:shadow-[0_4px_20px_rgba(124,92,252,0.12)] hover:-translate-y-px transition-all duration-150 active:scale-[0.99]"
+      className={`relative flex flex-col bg-white rounded-card border border-gray-100 shadow-card overflow-hidden cursor-pointer
+        hover:shadow-[0_4px_20px_rgba(124,92,252,0.12)] hover:-translate-y-px transition-all duration-150 active:scale-[0.99]
+        ${pausado ? "opacity-60" : ""}`}
     >
-      <div className="h-1 w-full bg-gradient-to-r from-amber-400 to-amber-500" />
+      <div className={`h-1 w-full bg-gradient-to-r ${pausado ? "from-gray-300 to-gray-400" : "from-amber-400 to-amber-500"}`} />
       <div className="flex flex-col flex-1 p-5">
         <div className="flex items-start justify-between mb-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50">
             <Crown size={18} className="text-amber-500" />
           </div>
-          <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-600 uppercase">
-            {FRECUENCIA_LABEL[plan.frecuencia] ?? plan.frecuencia}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {pausado && (
+              <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold text-gray-500 uppercase">
+                Pausado
+              </span>
+            )}
+            <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-600 uppercase">
+              {FRECUENCIA_LABEL[plan.frecuencia] ?? plan.frecuencia}
+            </span>
+          </div>
         </div>
         <h3 className="text-base font-bold text-gray-900 mb-1">{plan.nombre}</h3>
         <p className="text-xs text-gray-500 line-clamp-2 mb-4 flex-1">{plan.beneficioDescripcion}</p>
@@ -73,9 +86,11 @@ function PlanCard({ plan, onSuscribir, onClick }: { plan: Membresia; onSuscribir
 
 /* ── Plan Detalle Sheet ──────────────────────────────────────────────────── */
 
-function PlanDetalle({ plan, subsActivas, onClose, onSuscribir }: {
+function PlanDetalle({ plan, subsActivas, onClose, onSuscribir, onEditar, onTogglePausa, onEliminar, pausaLoading }: {
   plan: Membresia | null; subsActivas: number; onClose: () => void; onSuscribir: () => void;
+  onEditar: () => void; onTogglePausa: () => void; onEliminar: () => void; pausaLoading: boolean;
 }) {
+  const pausado = plan?.estado === "pausada";
   return (
     <Sheet
       open={!!plan}
@@ -83,16 +98,45 @@ function PlanDetalle({ plan, subsActivas, onClose, onSuscribir }: {
       title={plan?.nombre ?? ""}
       subtitle="Detalle del plan"
       footer={
-        <button
-          onClick={onSuscribir}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-welve-500 py-2.5 text-sm font-semibold text-white hover:bg-welve-600 transition-colors"
-        >
-          <UserPlus size={15} /> Suscribir cliente
-        </button>
+        <div className="w-full space-y-2">
+          <button
+            onClick={onSuscribir}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-welve-500 py-2.5 text-sm font-semibold text-white hover:bg-welve-600 transition-colors"
+          >
+            <UserPlus size={15} /> Suscribir cliente
+          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onEditar}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <Pencil size={13} /> Editar
+            </button>
+            <button
+              onClick={onTogglePausa}
+              disabled={pausaLoading}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
+            >
+              {pausado ? <PlayCircle size={13} /> : <PauseCircle size={13} />}
+              {pausado ? "Activar" : "Pausar"}
+            </button>
+            <button
+              onClick={onEliminar}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={13} /> Eliminar
+            </button>
+          </div>
+        </div>
       }
     >
       {plan && (
         <div className="space-y-5">
+          {pausado && (
+            <div className="rounded-xl bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-500">
+              Este plan está pausado — los clientes no pueden suscribirse mientras tanto.
+            </div>
+          )}
           <div className="rounded-xl bg-amber-50 p-5">
             <p className="text-[10px] text-amber-500 font-semibold uppercase mb-1">Precio</p>
             <p className="text-3xl font-black text-gray-900 tabular">
@@ -142,16 +186,45 @@ export default function MembresiasPage() {
   const { data: planes = [], isLoading: loadingPlanes } = useMembresias();
   const { data: suscripciones = [], isLoading: loadingSubs } = useSuscripciones();
   const updateSub = useUpdateSuscripcion();
+  const pausarPlan = usePausarMembresia();
+  const activarPlan = useActivarMembresia();
+  const deletePlan = useDeleteMembresia();
   const toast = useToast();
 
   const [tab,          setTab]          = useState<"planes" | "suscriptores">("planes");
   const [planModal,    setPlanModal]    = useState(false);
   const [subModal,     setSubModal]     = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Membresia | null>(null);
-  const [detallePlan,  setDetallePlan]  = useState<Membresia | null>(null);
+  const [detalleId,    setDetalleId]    = useState<string | null>(null);
+  const [editandoPlan, setEditandoPlan] = useState<Membresia | null>(null);
+  const [eliminando,   setEliminando]   = useState<Membresia | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<"todos" | EstadoMembresiaCliente>("todos");
 
+  const detallePlan = planes.find((p: Membresia) => p.id === detalleId) ?? null;
+
   function openSubModal(plan: Membresia) { setSelectedPlan(plan); setSubModal(true); }
+
+  async function handleTogglePausa(plan: Membresia) {
+    try {
+      plan.estado === "pausada" ? await activarPlan.mutateAsync(plan.id) : await pausarPlan.mutateAsync(plan.id);
+      toast.success(plan.estado === "pausada" ? "Plan activado" : "Plan pausado");
+    } catch {
+      toast.error("No se pudo actualizar el plan");
+    }
+  }
+
+  async function handleEliminar() {
+    if (!eliminando) return;
+    try {
+      await deletePlan.mutateAsync(eliminando.id);
+      toast.success("Plan eliminado");
+      setEliminando(null);
+      setDetalleId(null);
+    } catch (e) {
+      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(msg ?? "No se pudo eliminar el plan");
+    }
+  }
 
   async function handleUpdateStatus(id: string, estado: EstadoMembresiaCliente) {
     try {
@@ -237,7 +310,7 @@ export default function MembresiasPage() {
           ) : (
             planes.map((p: Membresia, i: number) => (
               <div key={p.id} className="animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
-                <PlanCard plan={p} onSuscribir={() => openSubModal(p)} onClick={() => setDetallePlan(p)} />
+                <PlanCard plan={p} onSuscribir={() => openSubModal(p)} onClick={() => setDetalleId(p.id)} />
               </div>
             ))
           )}
@@ -351,9 +424,36 @@ export default function MembresiasPage() {
       <PlanDetalle
         plan={detallePlan}
         subsActivas={detallePlanSubs}
-        onClose={() => setDetallePlan(null)}
-        onSuscribir={() => { const p = detallePlan; setDetallePlan(null); if (p) openSubModal(p); }}
+        onClose={() => setDetalleId(null)}
+        onSuscribir={() => { const p = detallePlan; setDetalleId(null); if (p) openSubModal(p); }}
+        onEditar={() => { if (detallePlan) setEditandoPlan(detallePlan); }}
+        onTogglePausa={() => { if (detallePlan) handleTogglePausa(detallePlan); }}
+        onEliminar={() => { if (detallePlan) setEliminando(detallePlan); }}
+        pausaLoading={pausarPlan.isPending || activarPlan.isPending}
       />
+      <EditarMembresiaModal
+        plan={editandoPlan}
+        onClose={() => setEditandoPlan(null)}
+        onSuccess={toast.success}
+        onError={toast.error}
+      />
+      <Modal
+        open={!!eliminando}
+        onClose={() => setEliminando(null)}
+        title="Eliminar plan"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setEliminando(null)}>Cancelar</Button>
+            <Button variant="danger" loading={deletePlan.isPending} onClick={handleEliminar}>Eliminar</Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          ¿Eliminar el plan <span className="font-bold text-gray-900">{eliminando?.nombre}</span>? Solo se puede
+          eliminar si nunca tuvo clientes suscritos — si los tuvo, pausa el plan en su lugar.
+        </p>
+      </Modal>
       <Toaster toasts={toast.toasts} onDismiss={toast.dismiss} />
     </main>
   );

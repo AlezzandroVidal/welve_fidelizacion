@@ -7,8 +7,13 @@ import {
   Crown, Shield, AlertTriangle, Camera,
   Globe, Mail, User, LogOut,
 } from "lucide-react";
-import { useEmpresaMe, useUpdateEmpresa, useUploadLogo, useDeleteLogo } from "../../hooks/useEmpresa";
+import { useNavigate } from "react-router-dom";
+import {
+  useEmpresaMe, useUpdateEmpresa, useUploadLogo, useDeleteLogo,
+  useCambiarPasswordEmpresa, useDesactivarCuenta,
+} from "../../hooks/useEmpresa";
 import { useToast } from "../../hooks/useToast";
+import { useAuth } from "../../context/AuthContext";
 import { Button, Modal, Toaster, Input } from "../../components/ui";
 
 const PLAN_LABEL: Record<string, string> = { starter: "Starter", growth: "Growth", pro: "Pro", basico: "Básico", profesional: "Profesional", enterprise: "Enterprise" };
@@ -305,6 +310,34 @@ function SeccionFidelizacion({ empresa, onSaved }: { empresa: NonNullable<Return
         ))}
       </div>
 
+      <div>
+        <p className="mb-1.5 text-xs font-semibold text-gray-700">Segmento exclusivo (VIP)</p>
+        <p className="mb-3 text-xs text-gray-400">
+          Un cliente entra a exclusivo al alcanzar N canjes en una ventana de días, y sale si
+          deja de cumplirlo por más de los días de gracia configurados.
+        </p>
+        <div className="space-y-4 rounded-xl bg-gray-50 p-4">
+          {[
+            { label: "Canjes requeridos", sub: "Cantidad de canjes dentro de la ventana", field: "umbral_exclusivo_canjes" as const, val: empresa.umbralExclusivoCanjes },
+            { label: "Ventana (días)", sub: "Período móvil donde se cuentan los canjes", field: "umbral_exclusivo_dias" as const, val: empresa.umbralExclusivoDias },
+            { label: "Días de gracia", sub: "Tiempo que conserva el estado VIP tras caer del umbral", field: "dias_gracia_exclusivo" as const, val: empresa.diasGraciaExclusivo },
+          ].map((item) => (
+            <div key={item.field}>
+              <Input
+                type="number"
+                defaultValue={item.val}
+                step="1"
+                min="1"
+                label={item.label}
+                hint={item.sub}
+                className="max-w-[200px]"
+                onChange={async (e) => { await update.mutateAsync({ [item.field]: parseInt((e.target as HTMLInputElement).value, 10) }); }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <Button onClick={save} loading={update.isPending}>Guardar reglas</Button>
     </div>
   );
@@ -312,19 +345,56 @@ function SeccionFidelizacion({ empresa, onSaved }: { empresa: NonNullable<Return
 
 /* ── Sección 3: Contacto ─────────────────────────────────────────────────── */
 
-function SeccionContacto({ onSaved }: { onSaved: (msg: string) => void }) {
-  function save(e: React.FormEvent) { e.preventDefault(); onSaved("Datos de contacto guardados"); }
+const contactoSchema = z.object({
+  descripcion: z.string().optional(),
+  direccion:   z.string().optional(),
+  horario:     z.string().optional(),
+  instagram:   z.string().optional(),
+  facebook:    z.string().optional(),
+  tiktok:      z.string().optional(),
+});
+type ContactoData = z.infer<typeof contactoSchema>;
+
+function SeccionContacto({ empresa, onSaved }: { empresa: NonNullable<ReturnType<typeof useEmpresaMe>["data"]>; onSaved: (msg: string) => void }) {
+  const update = useUpdateEmpresa();
+  const { register, handleSubmit, reset } = useForm<ContactoData>({
+    resolver: zodResolver(contactoSchema),
+    defaultValues: {
+      descripcion: empresa.descripcion ?? "",
+      direccion:   empresa.direccion ?? "",
+      horario:     empresa.horario ?? "",
+      instagram:   empresa.instagram ?? "",
+      facebook:    empresa.facebook ?? "",
+      tiktok:      empresa.tiktok ?? "",
+    },
+  });
+  useEffect(() => {
+    reset({
+      descripcion: empresa.descripcion ?? "",
+      direccion:   empresa.direccion ?? "",
+      horario:     empresa.horario ?? "",
+      instagram:   empresa.instagram ?? "",
+      facebook:    empresa.facebook ?? "",
+      tiktok:      empresa.tiktok ?? "",
+    });
+  }, [empresa, reset]);
+
+  async function onSubmit(d: ContactoData) {
+    await update.mutateAsync(d);
+    onSaved("Datos de contacto guardados");
+  }
 
   return (
-    <form onSubmit={save} className="space-y-4 max-w-lg">
-      <Input label="Dirección" placeholder="Jr. Las Flores 123, Miraflores" onChange={() => {}} />
-      <Input label="Horario de atención" placeholder="Lun–Vie 9am–6pm, Sáb 10am–2pm" onChange={() => {}} />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-lg">
+      <Input {...register("descripcion")} label="Descripción breve" placeholder="Cafetería de especialidad en Miraflores" />
+      <Input {...register("direccion")} label="Dirección" placeholder="Jr. Las Flores 123, Miraflores" />
+      <Input {...register("horario")} label="Horario de atención" placeholder="Lun–Vie 9am–6pm, Sáb 10am–2pm" />
       <div className="grid grid-cols-3 gap-3">
-        <Input label="Instagram" icon={<Globe size={14} />} placeholder="@mi_negocio" onChange={() => {}} />
-        <Input label="Facebook"  icon={<Globe size={14} />} placeholder="mi.negocio"  onChange={() => {}} />
-        <Input label="TikTok"    icon={<Globe size={14} />} placeholder="@mi_negocio" onChange={() => {}} />
+        <Input {...register("instagram")} label="Instagram" icon={<Globe size={14} />} placeholder="@mi_negocio" />
+        <Input {...register("facebook")} label="Facebook" icon={<Globe size={14} />} placeholder="mi.negocio" />
+        <Input {...register("tiktok")} label="TikTok" icon={<Globe size={14} />} placeholder="@mi_negocio" />
       </div>
-      <Button type="submit">Guardar contacto</Button>
+      <Button type="submit" loading={update.isPending}>Guardar contacto</Button>
     </form>
   );
 }
@@ -360,20 +430,47 @@ function SeccionPlan({ plan }: { plan: string }) {
 /* ── Sección 5: Seguridad ────────────────────────────────────────────────── */
 
 function SeccionSeguridad({ onSaved }: { onSaved: (msg: string) => void }) {
-  function changePw(e: React.FormEvent) { e.preventDefault(); onSaved("Contraseña actualizada"); }
+  const cambiarPassword = useCambiarPasswordEmpresa();
+  const { logout } = useAuth();
+  const [actual, setActual] = useState("");
+  const [nueva, setNueva] = useState("");
+  const [confirmar, setConfirmar] = useState("");
+  const [error, setError] = useState("");
+
+  async function changePw(e: React.FormEvent) {
+    e.preventDefault();
+    if (nueva.length < 8) { setError("La contraseña nueva debe tener al menos 8 caracteres"); return; }
+    if (nueva !== confirmar) { setError("Las contraseñas no coinciden"); return; }
+    setError("");
+    try {
+      await cambiarPassword.mutateAsync({ passwordActual: actual, passwordNueva: nueva });
+      setActual(""); setNueva(""); setConfirmar("");
+      onSaved("Contraseña actualizada");
+    } catch (e2) {
+      const msg = (e2 as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg ?? "No se pudo actualizar la contraseña.");
+    }
+  }
 
   return (
     <div className="max-w-lg space-y-6">
       <form onSubmit={changePw} className="space-y-4">
         <h3 className="text-sm font-bold text-gray-800">Cambiar contraseña</h3>
-        <Input variant="password" label="Contraseña actual"    placeholder="••••••••"                onChange={() => {}} />
-        <Input variant="password" label="Nueva contraseña"     placeholder="Mínimo 8 caracteres"    onChange={() => {}} />
-        <Input variant="password" label="Confirmar contraseña" placeholder="Repite la nueva"        onChange={() => {}} />
-        <Button type="submit">Actualizar contraseña</Button>
+        <Input variant="password" label="Contraseña actual" placeholder="••••••••" value={actual} onChange={(e) => setActual(e.target.value)} />
+        <Input variant="password" label="Nueva contraseña" placeholder="Mínimo 8 caracteres" value={nueva} onChange={(e) => setNueva(e.target.value)} />
+        <Input variant="password" label="Confirmar contraseña" placeholder="Repite la nueva" value={confirmar} onChange={(e) => setConfirmar(e.target.value)} />
+        {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+        <Button type="submit" loading={cambiarPassword.isPending}>Actualizar contraseña</Button>
       </form>
       <div className="border-t border-gray-100 pt-4">
-        <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 transition-colors">
-          <LogOut size={14} /> Cerrar todas las sesiones activas
+        {/* Welve usa JWT sin lista de revocación — no hay forma de invalidar sesiones
+            en otros dispositivos desde acá, solo cerrar la sesión actual. */}
+        <button
+          type="button"
+          onClick={logout}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 transition-colors"
+        >
+          <LogOut size={14} /> Cerrar sesión
         </button>
       </div>
     </div>
@@ -385,27 +482,48 @@ function SeccionSeguridad({ onSaved }: { onSaved: (msg: string) => void }) {
 function SeccionPeligro({ nombre }: { nombre: string }) {
   const [showModal, setShowModal] = useState(false);
   const [confirm,  setConfirm]   = useState("");
+  const [error, setError] = useState("");
+  const desactivar = useDesactivarCuenta();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleDesactivar() {
+    setError("");
+    try {
+      await desactivar.mutateAsync(confirm);
+      logout();
+      navigate("/login");
+    } catch (e) {
+      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg ?? "No se pudo desactivar la cuenta.");
+    }
+  }
 
   return (
     <div className="max-w-lg">
       <div className="rounded-xl border border-red-200 bg-red-50 p-5">
         <div className="flex items-center gap-2 mb-2">
           <AlertTriangle size={16} className="text-red-500" />
-          <h3 className="text-sm font-bold text-red-700">Eliminar cuenta</h3>
+          <h3 className="text-sm font-bold text-red-700">Desactivar cuenta</h3>
         </div>
-        <p className="text-xs text-red-600 mb-4">Esta acción es permanente e irreversible. Se eliminarán todos tus datos, clientes y configuraciones.</p>
-        <Button variant="danger" onClick={() => setShowModal(true)}>Eliminar mi cuenta</Button>
+        <p className="text-xs text-red-600 mb-4">
+          Tu cuenta quedará desactivada y no podrás volver a entrar a este panel. Tus clientes,
+          cupones y canjes se conservan — contacta a soporte si más adelante quieres reactivarla.
+        </p>
+        <Button variant="danger" onClick={() => setShowModal(true)}>Desactivar mi cuenta</Button>
       </div>
 
       <Modal
         open={showModal}
-        onClose={() => { setShowModal(false); setConfirm(""); }}
-        title="Confirmar eliminación"
+        onClose={() => { setShowModal(false); setConfirm(""); setError(""); }}
+        title="Confirmar desactivación"
         size="sm"
         footer={
           <>
-            <Button variant="ghost" onClick={() => { setShowModal(false); setConfirm(""); }}>Cancelar</Button>
-            <Button variant="danger" disabled={confirm !== nombre}>Eliminar permanentemente</Button>
+            <Button variant="ghost" onClick={() => { setShowModal(false); setConfirm(""); setError(""); }}>Cancelar</Button>
+            <Button variant="danger" disabled={confirm !== nombre} loading={desactivar.isPending} onClick={handleDesactivar}>
+              Desactivar cuenta
+            </Button>
           </>
         }
       >
@@ -417,6 +535,7 @@ function SeccionPeligro({ nombre }: { nombre: string }) {
             onChange={(e) => setConfirm((e.target as HTMLInputElement).value)}
             placeholder="Escribe aquí..."
           />
+          {error && <p className="text-xs font-medium text-red-500">{error}</p>}
         </div>
       </Modal>
     </div>
@@ -479,7 +598,7 @@ export default function ConfigPage() {
         <div className="flex-1 rounded-[16px] border border-gray-100 bg-white p-6 shadow-sm animate-fade-up min-h-[400px]">
           {tab === "perfil"       && <SeccionPerfil       empresa={empresa} onSaved={toast.success} />}
           {tab === "fidelizacion" && <SeccionFidelizacion empresa={empresa} onSaved={toast.success} />}
-          {tab === "contacto"     && <SeccionContacto     onSaved={toast.success} />}
+          {tab === "contacto"     && <SeccionContacto     empresa={empresa} onSaved={toast.success} />}
           {tab === "plan"         && <SeccionPlan         plan={empresa.planSuscripcion} />}
           {tab === "seguridad"    && <SeccionSeguridad    onSaved={toast.success} />}
           {tab === "peligro"      && <SeccionPeligro      nombre={empresa.nombre} />}
