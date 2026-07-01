@@ -6,12 +6,11 @@ import { X } from "lucide-react";
 import { useCreateCanje } from "../../../hooks/useCanjes";
 import { useClientes } from "../../../hooks/useClientes";
 import { useCupones } from "../../../hooks/useCupones";
-import { Input, SelectField } from "../../ui";
+import { SelectField } from "../../ui";
 
 const schema = z.object({
   cliente_id: z.string().min(1, "Debes seleccionar un cliente"),
   cupon_id:   z.string().min(1, "Debes seleccionar un cupón"),
-  staff_ref:  z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -40,7 +39,7 @@ export default function CanjeModal({ open, onClose, onSuccess, onError }: Props)
     try {
       await createCanje.mutateAsync({
         clienteId: d.cliente_id,
-        data: { cupon_id: d.cupon_id, canal: "staff_manual", staff_ref: d.staff_ref || null },
+        data: { cupon_id: d.cupon_id, canal: "staff_manual" },
       });
       onSuccess("Canje registrado correctamente");
       onClose();
@@ -86,12 +85,6 @@ export default function CanjeModal({ open, onClose, onSuccess, onError }: Props)
               <option key={c.id} value={c.id}>{c.nombre}</option>
             ))}
           </SelectField>
-
-          <Input
-            {...register("staff_ref")}
-            label="Referencia de staff"
-            placeholder="Ej. Ana de caja 2 (opcional)"
-          />
 
           <div className="flex gap-4 pt-4">
             <button type="button" onClick={onClose}

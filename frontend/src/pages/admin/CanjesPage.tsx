@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { CheckCircle2, Plus, QrCode, Link as LinkIcon, UserCheck, Sparkles } from "lucide-react";
+import { CheckCircle2, Plus, QrCode, Link as LinkIcon, UserCheck, Sparkles, Ticket } from "lucide-react";
 import { useCanjes } from "../../hooks/useCanjes";
+import { useCupon } from "../../hooks/useCupones";
 import { useToast } from "../../hooks/useToast";
 import CanjeModal from "../../components/admin/canjes/CanjeModal";
-import { Table, Badge, Toaster } from "../../components/ui";
+import { TIPO_LABEL } from "../../components/admin/cupones/badges";
+import { Table, Badge, Sheet, Toaster } from "../../components/ui";
+import type { Canje } from "../../api/canjes";
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
@@ -44,6 +47,67 @@ function initials(name: string) {
   return name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
+/** Nunca se muestra staffRef crudo (puede traer datos internos de registros
+ * viejos: email de login de la empresa, marcador de seed) — el origen se
+ * deriva siempre del canal. */
+function origenLabel(c: Canje): string {
+  if (c.canal === "staff_manual" || c.canal === "qr") return "Registrado manualmente";
+  if (c.canal === "automatico") return "Automático";
+  return "—";
+}
+
+/* ── Detalle Sheet ───────────────────────────────────────────────────────── */
+
+function CanjeDetalle({ canje, onClose }: { canje: Canje | null; onClose: () => void }) {
+  const { data: cupon } = useCupon(canje?.cuponId ?? null);
+  const canalInfo = canje ? (CANAL[canje.canal] ?? { label: canje.canal, icon: QrCode, color: "gray" as const }) : null;
+  const CanalIcon = canalInfo?.icon ?? QrCode;
+
+  return (
+    <Sheet open={!!canje} onClose={onClose} title={canje?.clienteNombre ?? "Cliente"} subtitle="Detalle del canje">
+      {canje && (
+        <div className="space-y-5">
+          <Badge color={canalInfo!.color as "blue" | "purple" | "gray" | "green"} dot>
+            <CanalIcon size={11} className="mr-1" />
+            {canalInfo!.label}
+          </Badge>
+
+          <div className="flex items-center gap-3 rounded-xl border border-welve-100 bg-welve-50/50 p-4">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-welve-100">
+              <Ticket size={18} className="text-welve-600" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase">Cupón canjeado</p>
+              <p className="text-sm font-bold text-gray-900">{canje.cuponNombre ?? "Cupón eliminado"}</p>
+              {cupon && (
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {TIPO_LABEL[cupon.tipo]}{cupon.valor !== null ? ` · ${cupon.tipo === "descuento_porcentual" ? `${cupon.valor}%` : `S/ ${cupon.valor}`}` : ""}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Fecha y hora</p>
+              <p className="text-sm font-bold text-gray-900">{fmtDatetime(canje.fecha)}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">{relativeTime(canje.fecha)}</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Registrado por</p>
+              <p className="text-sm font-bold text-gray-900">{origenLabel(canje)}</p>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-gray-400">
+            Este registro es inmutable — un canje nunca se edita ni se anula, es el historial permanente de la redención.
+          </p>
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 const CANALES = [
@@ -56,7 +120,7 @@ const CANALES = [
 
 const TABLE_COLS = [
   { label: "Cliente" }, { label: "Cupón canjeado" },
-  { label: "Canal" }, { label: "Fecha" }, { label: "Ref. staff" },
+  { label: "Canal" }, { label: "Fecha" }, { label: "Registrado por" },
 ];
 
 export default function CanjesPage() {
@@ -64,6 +128,7 @@ export default function CanjesPage() {
   const toast = useToast();
   const [modalOpen,    setModalOpen]    = useState(false);
   const [filtroCanal,  setFiltroCanal]  = useState("todos");
+  const [detalle,      setDetalle]      = useState<Canje | null>(null);
 
   const filtered = canjes.filter((c) => filtroCanal === "todos" || c.canal === filtroCanal);
 
@@ -133,7 +198,7 @@ export default function CanjesPage() {
               const name = c.clienteNombre ?? "Cliente";
 
               return (
-                <Table.Row key={c.id}>
+                <Table.Row key={c.id} onClick={() => setDetalle(c)}>
                   {/* Cliente con avatar */}
                   <Table.Cell>
                     <div className="flex items-center gap-2.5">
@@ -168,9 +233,9 @@ export default function CanjesPage() {
                     <p className="text-[10px] text-gray-400">{fmtDatetime(c.fecha)}</p>
                   </Table.Cell>
 
-                  {/* Staff ref */}
+                  {/* Origen del registro */}
                   <Table.Cell className="text-sm text-gray-400">
-                    {c.staffRef || "—"}
+                    {origenLabel(c)}
                   </Table.Cell>
                 </Table.Row>
               );
@@ -185,6 +250,7 @@ export default function CanjesPage() {
         onSuccess={toast.success}
         onError={toast.error}
       />
+      <CanjeDetalle canje={detalle} onClose={() => setDetalle(null)} />
 
       <Toaster toasts={toast.toasts} onDismiss={toast.dismiss} />
     </main>
