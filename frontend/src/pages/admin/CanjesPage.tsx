@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, Plus, QrCode, Link as LinkIcon, UserCheck } from "lucide-react";
+import { CheckCircle2, Plus, QrCode, Link as LinkIcon, UserCheck, Sparkles } from "lucide-react";
 import { useCanjes } from "../../hooks/useCanjes";
 import { useToast } from "../../hooks/useToast";
 import CanjeModal from "../../components/admin/canjes/CanjeModal";
@@ -24,10 +24,11 @@ function fmtDatetime(iso: string) {
   });
 }
 
-const CANAL: Record<string, { label: string; icon: typeof QrCode; color: "blue" | "purple" | "purple" | "gray" }> = {
-  qr:           { label: "QR",     icon: QrCode,    color: "blue"   },
-  magic_link:   { label: "Link",   icon: LinkIcon,  color: "purple" },
-  staff_manual: { label: "Staff",  icon: UserCheck, color: "gray"   },
+const CANAL: Record<string, { label: string; icon: typeof QrCode; color: "blue" | "purple" | "gray" | "green" }> = {
+  qr:           { label: "QR",         icon: QrCode,    color: "blue"   },
+  magic_link:   { label: "Link",       icon: LinkIcon,  color: "purple" },
+  staff_manual: { label: "Staff",      icon: UserCheck, color: "gray"   },
+  automatico:   { label: "Automático", icon: Sparkles,  color: "green"  },
 };
 
 const AVATAR_COLORS = [
@@ -46,10 +47,11 @@ function initials(name: string) {
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 const CANALES = [
-  { label: "Todos",  value: "todos"        },
-  { label: "QR",     value: "qr"           },
-  { label: "Link",   value: "magic_link"   },
-  { label: "Staff",  value: "staff_manual" },
+  { label: "Todos",      value: "todos"        },
+  { label: "QR",         value: "qr"           },
+  { label: "Link",       value: "magic_link"   },
+  { label: "Staff",      value: "staff_manual" },
+  { label: "Automático", value: "automatico"   },
 ];
 
 const TABLE_COLS = [
@@ -70,6 +72,7 @@ export default function CanjesPage() {
     qr:           canjes.filter((c) => c.canal === "qr").length,
     magic_link:   canjes.filter((c) => c.canal === "magic_link").length,
     staff_manual: canjes.filter((c) => c.canal === "staff_manual").length,
+    automatico:   canjes.filter((c) => c.canal === "automatico").length,
   };
 
   return (
@@ -148,7 +151,7 @@ export default function CanjesPage() {
 
                   {/* Canal */}
                   <Table.Cell>
-                    <Badge color={canalInfo.color as "blue" | "purple" | "gray"} size="sm">
+                    <Badge color={canalInfo.color as "blue" | "purple" | "gray" | "green"} size="sm">
                       <CanalIcon size={11} className="mr-1" />
                       {canalInfo.label}
                     </Badge>

@@ -1,6 +1,6 @@
 import api from "./client";
 
-export type CanalCanje = "qr" | "magic_link" | "staff_manual";
+export type CanalCanje = "qr" | "magic_link" | "staff_manual" | "automatico";
 
 export interface Canje {
   id: string;
