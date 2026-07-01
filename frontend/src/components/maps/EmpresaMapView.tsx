@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { welvePinIcon } from "./leafletIcons";
+import "./leafletIcons";
 
 interface Props {
   lat: number;
@@ -15,13 +15,12 @@ export default function EmpresaMapView({ lat, lng, nombre }: Props) {
         zoom={16}
         style={{ height: 200, width: "100%" }}
         scrollWheelZoom={false}
-        className="welve-map"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <Marker position={[lat, lng]} icon={welvePinIcon}>
+        <Marker position={[lat, lng]}>
           <Popup>{nombre}</Popup>
         </Marker>
       </MapContainer>
