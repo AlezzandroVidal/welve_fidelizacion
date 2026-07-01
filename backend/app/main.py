@@ -19,6 +19,7 @@ from app.routers import (
     metricas,
     wallet,
     qr,
+    staff,
 )
 
 
@@ -56,3 +57,4 @@ app.include_router(membresias.router, prefix="/api/v1")
 app.include_router(metricas.router, prefix="/api/v1")
 app.include_router(wallet.router, prefix="/api/v1/wallet")
 app.include_router(qr.router, prefix="/api/v1")
+app.include_router(staff.router, prefix="/api/v1")
