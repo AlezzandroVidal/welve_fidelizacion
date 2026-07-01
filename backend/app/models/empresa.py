@@ -1,16 +1,26 @@
 from datetime import datetime, timezone
 
-from beanie import Document, Indexed
+from beanie import Document, Indexed, PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field
 from pymongo import ASCENDING, IndexModel
 
 from app.models.enums import EstadoEmpresa, PlanSuscripcion, RubroEmpresa
 
 
+class RecompensaAutomatica(BaseModel):
+    """Regla 'en la visita N -> entrega este cupón', configurada por la empresa."""
+
+    visitas_requeridas: int
+    cupon_id: PydanticObjectId
+    activa: bool = True
+    descripcion: str
+
+
 class EmpresaConfig(BaseModel):
     racha_dias_ruptura: int = 7
     soles_por_punto: float = 1.0
     expiracion_meses: int = 12
+    recompensas_automaticas: list[RecompensaAutomatica] = Field(default_factory=list)
 
 
 class Empresa(Document):

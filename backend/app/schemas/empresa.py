@@ -48,3 +48,25 @@ class EmpresaUpdate(BaseModel):
 class EmpresaLogoUpload(BaseModel):
     """data URI base64 (data:image/...;base64,...) — máx ~2 MB."""
     data_uri: str
+
+
+class RecompensaAutomaticaCreate(BaseModel):
+    visitas_requeridas: int
+    cupon_id: str
+    descripcion: str
+
+
+class RecompensaAutomaticaUpdate(BaseModel):
+    visitas_requeridas: int | None = None
+    cupon_id: str | None = None
+    descripcion: str | None = None
+    activa: bool | None = None
+
+
+class RecompensaAutomaticaResponse(BaseModel):
+    index: int
+    visitasRequeridas: int
+    cuponId: str
+    cuponNombre: str | None = None
+    activa: bool
+    descripcion: str
