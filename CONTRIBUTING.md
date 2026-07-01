@@ -79,7 +79,11 @@ se abra sigue estos mismos pasos, con `gh` CLI (ver instalación más abajo).
 
 2. Desarrolla en commits pequeños y semánticos (Conventional Commits, ver arriba).
 
-3. Antes de abrir el PR, asegúrate de que los tests pasen:
+3. Agrega tu entrada en `CHANGELOG.md`, bajo `## [Sin publicar]`, categorizada
+   (`Agregado` / `Cambiado` / `Corregido` / `Documentación`) — así lo que
+   termina en `main` queda descrito ahí, no solo en el mensaje del commit.
+
+4. Antes de abrir el PR, asegúrate de que los tests pasen:
    ```bash
    # Backend
    cd backend && pytest
@@ -88,29 +92,35 @@ se abra sigue estos mismos pasos, con `gh` CLI (ver instalación más abajo).
    cd frontend && npm test
    ```
 
-4. Pushea la rama y abre el PR (usa la plantilla de `.github/PULL_REQUEST_TEMPLATE.md` en el body):
+5. Pushea la rama y abre el PR (usa la plantilla de `.github/PULL_REQUEST_TEMPLATE.md` en el body):
    ```bash
    git push -u origin feature/mi-feature
    gh pr create --base main --title "feat(scope): descripción corta" --body "..."
    ```
 
-5. Agrega el PR al roadmap con fecha de inicio de hoy (ver comandos en
+6. Agrega el PR al roadmap con fecha de inicio de hoy (ver comandos en
    "Seguimiento del roadmap" más abajo) — así queda visible en
    [**Welve Roadmap**](https://github.com/users/AlezzandroVidal/projects/1)
    desde que se abre, no solo cuando se mergea.
 
-6. Al menos 1 aprobación antes de hacer merge.
+7. Al menos 1 aprobación antes de hacer merge.
 
-7. Mergear con **Squash and Merge**:
+8. Mergear con **Squash and Merge** — el mensaje del squash debe resumir
+   todo lo que trae el PR (no solo el título de un commit cualquiera):
    ```bash
    gh pr merge <número> --squash --subject "..." --body "..."
    ```
 
-8. Actualiza la fecha de fin (`Target date`) del item en el roadmap a la fecha de merge.
+9. Actualiza la fecha de fin (`Target date`) del item en el roadmap a la fecha de merge.
 
-9. **No borrar la rama** — queda visible junto al PR para poder auditar qué
-   se hizo. El historial en `main` no depende de esto: una vez mergeado el
-   PR, el commit ya vive en `main` sin importar si la rama sigue existiendo.
+10. **No borrar la rama** — queda visible junto al PR para poder auditar qué
+    se hizo. El historial en `main` no depende de esto: una vez mergeado el
+    PR, el commit ya vive en `main` sin importar si la rama sigue existiendo.
+
+Las entradas quedan en `[Sin publicar]` hasta que alguien haga un pase de
+housekeeping (otra rama `docs/`, PR normal) que les pone fecha y las agrupa
+— nunca se edita `CHANGELOG.md` directo en `main`, mismo flujo que cualquier
+otro cambio (regla en `CLAUDE.md`: nunca push directo a `main`).
 
 ---
 
