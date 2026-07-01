@@ -34,6 +34,8 @@ def _to_response(e: Empresa) -> EmpresaResponse:
         telefonoContacto=e.telefono_contacto,
         descripcion=e.descripcion,
         direccion=e.direccion,
+        latitud=e.latitud,
+        longitud=e.longitud,
         horario=e.horario,
         instagram=e.instagram,
         facebook=e.facebook,
@@ -96,6 +98,10 @@ async def update_config(data: EmpresaUpdate, empresa: Empresa = Depends(get_curr
         empresa.descripcion = data.descripcion
     if data.direccion is not None:
         empresa.direccion = data.direccion
+    if data.latitud is not None:
+        empresa.latitud = data.latitud
+    if data.longitud is not None:
+        empresa.longitud = data.longitud
     if data.horario is not None:
         empresa.horario = data.horario
     if data.instagram is not None:

@@ -35,6 +35,8 @@ class Empresa(Document):
     telefono_contacto: str | None = None
     descripcion: str | None = None
     direccion: str | None = None
+    latitud: float | None = None
+    longitud: float | None = None
     horario: str | None = None
     instagram: str | None = None
     facebook: str | None = None

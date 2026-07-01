@@ -15,6 +15,7 @@ import {
 import { useToast } from "../../hooks/useToast";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Modal, Toaster, Input } from "../../components/ui";
+import EmpresaMapPicker from "../../components/maps/EmpresaMapPicker";
 
 const PLAN_LABEL: Record<string, string> = { starter: "Starter", growth: "Growth", pro: "Pro", basico: "Básico", profesional: "Profesional", enterprise: "Enterprise" };
 const PLAN_LIMITS: Record<string, { clientes: number; cupones: number }> = {
@@ -357,6 +358,8 @@ type ContactoData = z.infer<typeof contactoSchema>;
 
 function SeccionContacto({ empresa, onSaved }: { empresa: NonNullable<ReturnType<typeof useEmpresaMe>["data"]>; onSaved: (msg: string) => void }) {
   const update = useUpdateEmpresa();
+  const [lat, setLat] = useState<number | null>(empresa.latitud);
+  const [lng, setLng] = useState<number | null>(empresa.longitud);
   const { register, handleSubmit, reset } = useForm<ContactoData>({
     resolver: zodResolver(contactoSchema),
     defaultValues: {
@@ -377,10 +380,15 @@ function SeccionContacto({ empresa, onSaved }: { empresa: NonNullable<ReturnType
       facebook:    empresa.facebook ?? "",
       tiktok:      empresa.tiktok ?? "",
     });
+    setLat(empresa.latitud);
+    setLng(empresa.longitud);
   }, [empresa, reset]);
 
   async function onSubmit(d: ContactoData) {
-    await update.mutateAsync(d);
+    await update.mutateAsync({
+      ...d,
+      ...(lat !== null && lng !== null ? { latitud: lat, longitud: lng } : {}),
+    });
     onSaved("Datos de contacto guardados");
   }
 
@@ -389,6 +397,12 @@ function SeccionContacto({ empresa, onSaved }: { empresa: NonNullable<ReturnType
       <Input {...register("descripcion")} label="Descripción breve" placeholder="Cafetería de especialidad en Miraflores" />
       <Input {...register("direccion")} label="Dirección" placeholder="Jr. Las Flores 123, Miraflores" />
       <Input {...register("horario")} label="Horario de atención" placeholder="Lun–Vie 9am–6pm, Sáb 10am–2pm" />
+
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold text-gray-700">Ubicación en el mapa</label>
+        <EmpresaMapPicker lat={lat} lng={lng} onChange={(la, lo) => { setLat(la); setLng(lo); }} />
+      </div>
+
       <div className="grid grid-cols-3 gap-3">
         <Input {...register("instagram")} label="Instagram" icon={<Globe size={14} />} placeholder="@mi_negocio" />
         <Input {...register("facebook")} label="Facebook" icon={<Globe size={14} />} placeholder="mi.negocio" />

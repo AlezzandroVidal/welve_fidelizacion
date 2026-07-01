@@ -130,6 +130,8 @@ async def get_empresa_detalle(empresa_id: PydanticObjectId, cliente_id: Pydantic
             "logo_url": getattr(emp, "logo_url", None),
             "descripcion": getattr(emp, "descripcion", None),
             "direccion": getattr(emp, "direccion", None),
+            "latitud": getattr(emp, "latitud", None),
+            "longitud": getattr(emp, "longitud", None),
             "horario": getattr(emp, "horario", None),
             "instagram": getattr(emp, "instagram", None),
             "facebook": getattr(emp, "facebook", None),

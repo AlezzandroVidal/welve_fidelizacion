@@ -8,6 +8,8 @@ export interface Empresa {
   telefonoContacto: string | null;
   descripcion: string | null;
   direccion: string | null;
+  latitud: number | null;
+  longitud: number | null;
   horario: string | null;
   instagram: string | null;
   facebook: string | null;
@@ -35,6 +37,8 @@ export interface EmpresaUpdateDto {
   dias_gracia_exclusivo?: number;
   descripcion?: string;
   direccion?: string;
+  latitud?: number;
+  longitud?: number;
   horario?: string;
   instagram?: string;
   facebook?: string;
