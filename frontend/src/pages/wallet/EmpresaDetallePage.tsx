@@ -1,13 +1,33 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useEmpresaDetalle } from '../../hooks/useWallet';
-import { Clock, MapPin, Flame, Ticket, X, QrCode, Video } from 'lucide-react';
+import { useVisitaQR } from '../../hooks/useQR';
+import { useAuth } from '../../context/AuthContext';
+import VisitaResultado from '../../components/qr/VisitaResultado';
+import QRDisplay from '../../components/admin/QRDisplay';
+import type { ResultadoVisita } from '../../api/qr';
+import { Clock, MapPin, Flame, Ticket, X, MapPinned, Video } from 'lucide-react';
 
 export default function EmpresaDetallePage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { data, isLoading } = useEmpresaDetalle(id || '');
   const [activeTab, setActiveTab] = useState<'todos' | 'exclusivos'>('todos');
   const [selectedCupon, setSelectedCupon] = useState<any | null>(null);
+  const visita = useVisitaQR();
+  const [resultadoVisita, setResultadoVisita] = useState<ResultadoVisita | null>(null);
+  const [errorVisita, setErrorVisita] = useState('');
+
+  async function handleRegistrarVisita() {
+    if (!id) return;
+    setErrorVisita('');
+    try {
+      const res = await visita.mutateAsync(id);
+      setResultadoVisita(res);
+    } catch {
+      setErrorVisita('No se pudo registrar tu visita. Intenta de nuevo.');
+    }
+  }
 
   if (isLoading || !data) {
     return <div className="p-6 text-center animate-pulse">Cargando empresa...</div>;
@@ -29,15 +49,15 @@ export default function EmpresaDetallePage() {
 
   const getCuponColor = (tipo: string) => {
     switch(tipo) {
-      case 'porcentaje_descuento': return 'from-blue-500 to-indigo-600';
-      case 'monto_descuento': return 'from-emerald-400 to-teal-500';
+      case 'descuento_porcentual': return 'from-blue-500 to-indigo-600';
+      case 'descuento_fijo': return 'from-emerald-400 to-teal-500';
       case 'producto_gratis': return 'from-orange-400 to-rose-500';
       default: return 'from-purple-500 to-pink-500';
     }
   };
 
   return (
-    <div className="pb-10 relative bg-[#EDEBFB] min-h-screen">
+    <div className="pb-10 relative bg-welve-100 min-h-screen">
       {/* HERO COVER */}
       <div className={`h-[200px] w-full bg-gradient-to-br ${getGradientForRubro(empresa.rubro)} rounded-b-[40px] shadow-sm relative`}>
         {/* Mock image for now */}
@@ -70,6 +90,17 @@ export default function EmpresaDetallePage() {
             {empresa.facebook && <a href="#" className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-600 hover:scale-110 transition-transform"><Video size={18} /></a>}
             {empresa.tiktok && <a href="#" className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-black hover:scale-110 transition-transform"><Video size={16} /></a>}
           </div>
+
+          {/* Registrar visita sin escanear QR — el cliente ya está en la app */}
+          <button
+            onClick={handleRegistrarVisita}
+            disabled={visita.isPending}
+            className="mb-6 flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-gray-900/20 transition-transform active:scale-95 disabled:opacity-60"
+          >
+            <MapPinned size={16} />
+            {visita.isPending ? 'Registrando...' : 'Estoy aquí — Registrar visita'}
+          </button>
+          {errorVisita && <p className="mb-4 text-xs text-red-500">{errorVisita}</p>}
         </div>
 
         {/* Info basica */}
@@ -92,7 +123,7 @@ export default function EmpresaDetallePage() {
 
         {/* MI PROGRESO */}
         {mi_relacion && (
-          <div className="bg-gradient-to-br from-welve-50 to-[#EDEBFB] rounded-3xl p-5 shadow-sm border border-welve-100 mb-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-welve-50 to-welve-100 rounded-3xl p-5 shadow-sm border border-welve-100 mb-6 relative overflow-hidden">
             {mi_relacion.segmento === 'exclusivo' && (
               <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-4 py-1 rounded-bl-xl shadow-sm">
                 ⭐ Eres cliente VIP
@@ -171,7 +202,7 @@ export default function EmpresaDetallePage() {
             <div className="flex gap-2 p-1 bg-white rounded-full mb-4 shadow-sm">
               <button
                 onClick={() => setActiveTab('todos')}
-                className={`flex-1 py-2 text-sm font-bold rounded-full transition-colors ${activeTab === 'todos' ? 'bg-[#EDEBFB] text-welve-700' : 'text-gray-500'}`}
+                className={`flex-1 py-2 text-sm font-bold rounded-full transition-colors ${activeTab === 'todos' ? 'bg-welve-100 text-welve-700' : 'text-gray-500'}`}
               >
                 Para todos
               </button>
@@ -199,13 +230,13 @@ export default function EmpresaDetallePage() {
                   
                   <div className="flex items-end gap-2 mb-2">
                     <span className="text-4xl font-black leading-none tracking-tighter">
-                      {cupon.tipo === 'porcentaje_descuento' ? `${cupon.valor}%` :
-                       cupon.tipo === 'monto_descuento' ? `S/${cupon.valor}` :
+                      {cupon.tipo === 'descuento_porcentual' ? `${cupon.valor}%` :
+                       cupon.tipo === 'descuento_fijo' ? `S/${cupon.valor}` :
                        cupon.tipo === 'dos_por_uno' ? '2x1' : 'GRATIS'}
                     </span>
                     <span className="text-sm font-bold uppercase opacity-90 pb-1">
-                      {cupon.tipo === 'porcentaje_descuento' ? 'OFF' :
-                       cupon.tipo === 'monto_descuento' ? 'DSCTO' :
+                      {cupon.tipo === 'descuento_porcentual' ? 'OFF' :
+                       cupon.tipo === 'descuento_fijo' ? 'DSCTO' :
                        cupon.tipo === 'dos_por_uno' ? 'PROMO' : 'REGALO'}
                     </span>
                   </div>
@@ -300,16 +331,12 @@ export default function EmpresaDetallePage() {
             </div>
             
             <div className="p-8 pb-10 flex flex-col items-center">
-              <div className="p-4 border-2 border-gray-100 rounded-3xl mb-6 bg-white shadow-sm relative">
-                {/* Fallback QR since we aren't installing qrcode.react */}
-                <div className="w-48 h-48 bg-gray-50 rounded-2xl flex flex-col items-center justify-center border-4 border-dashed border-gray-200">
-                  <QrCode size={64} className="text-gray-300 mb-3" />
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider text-center px-4">
-                    Escanea para validar
-                  </p>
-                </div>
-              </div>
-              
+              <QRDisplay
+                path={`/qr/cupon/${selectedCupon._id ?? selectedCupon.id}?cliente=${user?.id ?? ''}`}
+                size="lg"
+                className="mb-6"
+              />
+
               <div className="text-center w-full">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Código de canje</p>
                 <div className="bg-gray-100 py-3 rounded-2xl">
@@ -318,6 +345,19 @@ export default function EmpresaDetallePage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Resultado de "Registrar visita" — mismo componente que usan las páginas de QR */}
+      {resultadoVisita && (
+        <div className="fixed inset-0 z-[100]">
+          <VisitaResultado resultado={resultadoVisita} empresaNombre={empresa.nombre} />
+          <button
+            onClick={() => setResultadoVisita(null)}
+            className="absolute top-6 right-6 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
+          >
+            <X size={18} />
+          </button>
         </div>
       )}
     </div>

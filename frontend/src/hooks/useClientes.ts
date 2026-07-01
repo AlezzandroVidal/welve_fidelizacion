@@ -7,3 +7,11 @@ export function useClientes() {
     queryFn: () => clientesApi.list().then((r) => r.data),
   });
 }
+
+export function useCliente(id: string | null) {
+  return useQuery({
+    queryKey: ["clientes", "detail", id ?? ""],
+    queryFn: () => clientesApi.get(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}

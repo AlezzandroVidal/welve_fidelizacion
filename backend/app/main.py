@@ -18,6 +18,7 @@ from app.routers import (
     membresias,
     metricas,
     wallet,
+    qr,
 )
 
 
@@ -54,3 +55,4 @@ app.include_router(retos.router, prefix="/api/v1")
 app.include_router(membresias.router, prefix="/api/v1")
 app.include_router(metricas.router, prefix="/api/v1")
 app.include_router(wallet.router, prefix="/api/v1/wallet")
+app.include_router(qr.router, prefix="/api/v1")

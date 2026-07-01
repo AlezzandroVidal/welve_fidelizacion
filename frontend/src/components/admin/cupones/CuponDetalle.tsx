@@ -2,6 +2,7 @@ import { X, Edit2, Pause, Play, Ticket } from "lucide-react";
 import type { Cupon } from "../../../api/cupones";
 import { useCanjesCupon, usePausarCupon, useActivarCupon } from "../../../hooks/useCupones";
 import { TIPO_COLOR, TIPO_LABEL, ESTADO_COLOR, ESTADO_LABEL } from "./badges";
+import QRDisplay from "../QRDisplay";
 
 interface Props {
   cupon: Cupon | null;
@@ -20,7 +21,7 @@ function fmtDatetime(iso: string) {
 }
 
 function CANAL_LABEL(canal: string) {
-  return { qr: "QR", magic_link: "Magic link", staff_manual: "Staff" }[canal] ?? canal;
+  return { qr: "QR", magic_link: "Magic link", staff_manual: "Staff", automatico: "Automático" }[canal] ?? canal;
 }
 
 export default function CuponDetalle({ cupon, onClose, onEdit, onSuccess, onError }: Props) {
@@ -168,6 +169,15 @@ export default function CuponDetalle({ cupon, onClose, onEdit, onSuccess, onErro
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* QR de este cupón */}
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">QR de este cupón</h4>
+              <p className="text-xs text-gray-400 mb-3">
+                El cliente muestra este QR y tú lo escaneas para validar el canje.
+              </p>
+              <QRDisplay path={`/qr/cupon/${cupon.id}`} size="sm" />
             </div>
           </div>
         )}

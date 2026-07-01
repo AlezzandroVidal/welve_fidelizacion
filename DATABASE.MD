@@ -32,9 +32,16 @@ El tenant raíz. No lleva `empresa_id` (es la raíz).
 | `admin_password_hash` | `str` | bcrypt/argon2 |
 | `plan_suscripcion` | `enum PlanSuscripcion` | `starter`, `growth`, `pro` — plan que la empresa paga a Welve |
 | `estado` | `enum EstadoEmpresa` | `activo`, `suspendido`, `cancelado` |
-| `config` | `EmpresaConfig` (embedded) | `racha_dias_ruptura: int = 7` |
+| `config` | `EmpresaConfig` (embedded) | `racha_dias_ruptura: int = 7`, `soles_por_punto`, `expiracion_meses`, `recompensas_automaticas: list[RecompensaAutomatica] = []` |
 | `fecha_registro` | `datetime` | |
 | `created_at` / `updated_at` | `datetime` | |
+
+**`RecompensaAutomatica`** (embebido dentro de `config.recompensas_automaticas`): regla "en la visita N,
+entrega este cupón" que la empresa configura desde el panel (sección de QR codes). Campos:
+`visitas_requeridas: int`, `cupon_id: PydanticObjectId`, `activa: bool = True`, `descripcion: str`. El
+índice de la empresa en la lista actúa como identificador (no tiene `_id` propio). La evalúa
+`services/visita_service.py` en cada visita registrada — ver sección "Jobs..." más abajo, aunque en este
+caso la evaluación es síncrona (parte de `registrar_visita()`), no un job de Celery.
 
 ---
 
@@ -170,8 +177,8 @@ Registro inmutable de cada redención. Nunca se actualiza, solo se inserta.
 | `cliente_id` | `Indexed(PydanticObjectId)` | |
 | `cupon_id` | `Indexed(PydanticObjectId)` | |
 | `fecha` | `datetime` | default `utcnow` |
-| `canal` | `enum CanalCanje` | `qr`, `magic_link`, `staff_manual` |
-| `staff_ref` | `Optional[str]` | identificador simple del staff que lo registró; no se modela `Staff` como entidad en v1 |
+| `canal` | `enum CanalCanje` | `qr`, `magic_link`, `staff_manual`, `automatico` (otorgado por `visita_service` — recompensa por visitas o reto completado, sin intervención del staff) |
+| `staff_ref` | `Optional[str]` | identificador simple del staff que lo registró; `"sistema:recompensa_automatica"` / `"sistema:reto_completado"` cuando `canal=automatico`. No se modela `Staff` como entidad en v1 |
 | `created_at` | `datetime` | |
 
 **Índices compuestos:**

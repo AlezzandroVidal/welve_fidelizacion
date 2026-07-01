@@ -12,43 +12,56 @@ y recompensas por historial. Los clientes finales acceden sin registro vía QR o
 Antes de implementar cualquier feature de dominio, lee `PRODUCT.MD` (reglas de
 negocio) y `DATABASE.MD` (schema completo de colecciones, tipos y enums).
 
+Antes de tocar UI, lee `DESIGN.md` (paleta, tipografía, layout de tarjetas/sidebar, íconos):
+es la fuente de verdad de tokens visuales — no inventar valores nuevos por componente.
+
 ## Stack
 
 - **Backend**: Python 3.11, FastAPI 0.115, Motor 3.6 + Beanie 1.27 (MongoDB), Celery 5.4, Redis 7.4
 - **Frontend**: React 18, Vite 6, TailwindCSS 3, React Query 5, TypeScript
-- **DB**: MongoDB 7.0
+- **DB**: MongoDB Atlas (cluster en la nube, `MONGO_URI` con `mongodb+srv://`) — **no** hay contenedor
+  Mongo local; `docker-compose.yml` no define un servicio `mongo`.
 - **Testing**: Pytest (backend), Vitest (frontend)
 - **Infra**: Docker Compose (`name: welve`), GitHub Codespaces
+
+## Flujo de desarrollo por defecto (Codespaces)
+
+El devcontainer (`.devcontainer/devcontainer.json`) **no** levanta el stack completo con Docker.
+Al crear el Codespace:
+- `postCreateCommand` copia `.env.example` → `.env`, instala `backend/requirements.txt` y `frontend` (`npm install`).
+- `postStartCommand` solo corre `docker compose up redis -d`.
+
+El día a día es: Redis en Docker + backend con `uvicorn`/`fastapi dev` nativo + frontend con `npm run dev`
+nativo. `docker compose up --build` (stack completo, backend/frontend/celery-worker dockerizados) es para
+probar el build tipo producción, no el loop de desarrollo habitual.
 
 ## Comandos clave
 
 ```bash
-# Stack completo (primera vez o tras cambios en Dockerfile)
+# Solo Redis (flujo por defecto en Codespaces — ver arriba)
+docker compose up redis -d
+
+# Stack completo dockerizado (backend + celery-worker + frontend + redis),
+# para probar el build tipo producción — Mongo sigue siendo Atlas, no local
 docker compose up --build
-
-# Stack en background (día a día)
-docker compose up -d
-
-# Solo servicios de datos (desarrollo local sin Docker del backend)
-docker compose up mongo redis -d
+docker compose up -d      # en background, sin rebuild
 
 # Logs de un servicio
-docker compose logs -f backend        # o: frontend | celery-worker | mongo | redis
+docker compose logs -f backend        # o: frontend | celery-worker | redis
 
-# Reset completo (borra volúmenes de Mongo)
-docker compose down -v
+# Bajar el stack (no hay volúmenes locales que borrar: Mongo es Atlas,
+# Redis no tiene volumen definido en docker-compose.yml)
+docker compose down
 
-# Shell de Mongo (usuario de aplicación)
-docker compose exec mongo mongosh -u welve_app -p changeme_app --authenticationDatabase welve welve
+# Conectarse a Mongo Atlas con mongosh (usa el MONGO_URI de .env)
+mongosh "$MONGO_URI"
 
-# Tests backend — todos
+# Tests backend (pytest + pytest-asyncio ya están en requirements.txt,
+# pero no existe todavía backend/tests/ — crearla al agregar el primer test)
 cd backend && pytest -v
 
-# Tests backend — un archivo o test específico
-cd backend && pytest tests/test_cupones.py -v
-cd backend && pytest tests/test_cupones.py::test_crear_cupon -v
-
-# Tests frontend
+# Tests frontend (vitest ya está configurado en package.json,
+# pero no existe todavía ningún *.test.ts(x) — crearlo al agregar el primer test)
 cd frontend && npm test
 
 # Dev server frontend (sin Docker, apunta a API en :8000)
@@ -71,14 +84,17 @@ Los índices de Beanie/MongoDB se crean automáticamente en el startup de FastAP
 
 ## Desarrollo local sin Docker (backend)
 
-Cuando se corre `docker compose up mongo redis -d` y el backend directamente con `uvicorn`, el `.env` debe usar `localhost` en lugar de los nombres de servicio Docker:
+`MONGO_URI` apunta siempre al mismo cluster de Atlas (no cambia entre Docker y local). Lo único que
+cambia es `REDIS_URL`/`CELERY_*`: si Redis corre vía `docker compose up redis -d` y el backend se corre
+nativo con `uvicorn`, usar `localhost` en vez del nombre de servicio Docker:
 
 ```
-MONGO_URI=mongodb://welve_app:changeme_app@localhost:27017/welve?authSource=welve
 REDIS_URL=redis://localhost:6379/0
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/1
 ```
 
-En Docker Compose, `MONGO_URI` usa `mongo` como host (nombre del servicio).
+Dentro de `docker-compose.yml` (backend/celery-worker dockerizados), estas variables usan `redis` como host.
 
 ## Reglas que NUNCA debo romper
 
@@ -118,8 +134,11 @@ Cada módulo de dominio sigue el patrón `router → service → model` y vive e
 - `services/<dominio>_service.py` — lógica de negocio, único lugar que toca Beanie
 - `routers/<dominio>.py` — endpoints HTTP, expuestos en `/api/v1/<dominio>`
 
-Módulos: `empresas` (incluye auth admin), `clientes`, `relaciones` (historial/racha/segmento),
-`cupones`, `retos`, `membresias`, `canjes`, `auth_cliente` (magic link/QR), `metricas` (dashboard, solo lectura).
+Módulos: `empresas` (incluye auth admin), `admin_auth` (login WelveAdmin, prefijo interno `/admin/auth`),
+`clientes`, `relaciones` (historial/racha/segmento), `cupones`, `retos`, `membresias`, `canjes`,
+`auth_cliente` (magic link/QR), `metricas` (dashboard, solo lectura),
+`wallet` (vista del cliente final sobre todas sus empresas — el único router sin prefijo propio;
+recibe `/api/v1/wallet` al registrarse en `main.py`).
 
 **Al agregar un nuevo módulo**, registrar el modelo Beanie en **dos lugares**:
 1. `app/db/mongodb.py` → lista `document_models` del `init_beanie()`
@@ -132,8 +151,13 @@ Los tres tipos de token JWT nunca deben mezclarse entre sí:
 | Rol | Cómo accede | Dependencia FastAPI | Prefijo de ruta |
 |---|---|---|---|
 | `empresa` | email/password | `get_current_empresa_admin` | `/api/v1/empresas/...` |
-| `cliente` | magic link / QR | `get_current_cliente` → `(Cliente, RelacionClienteEmpresa)` | `/api/v1/auth/cliente/...` |
+| `cliente` | magic link / QR | `get_current_cliente` → `(Cliente, RelacionClienteEmpresa)`, scoped a una empresa | `/api/v1/auth/cliente/...` |
+| `cliente` (multi-empresa) | mismo token, sin depender de `empresa_id` | `get_global_cliente` → `Cliente` solo, sin relación | `/api/v1/wallet/...` |
 | `superadmin` / `soporte` | email/password (WelveAdmin) | `get_current_super_admin` | `/api/v1/admin/auth/...` |
+
+`get_current_cliente` valida que exista una `RelacionClienteEmpresa` para el `empresa_id` del token
+(endpoints de una empresa específica); `get_global_cliente` solo valida al cliente y se usa en `wallet`,
+donde el cliente ve el agregado de todas sus empresas.
 
 La fuente de verdad de las dependencias está en `app/core/dependencies.py`.
 `app/core/deps.py` es un shim de compatibilidad que re-exporta todo desde allí — no editarlo directamente.
@@ -160,7 +184,9 @@ El frontend almacena el token en `localStorage["welve_token"]`.
   `models/` (documentos Mongo + `enums.py`), `schemas/` (Pydantic I/O), `routers/`, `services/`, `worker/` (Celery)
 - `/frontend/src/` — React: `api/` (cliente Axios + funciones por dominio), `context/AuthContext.tsx` (JWT decode + roles),
   `hooks/` (React Query hooks por dominio), `pages/` (`auth/`, `admin/`, `wallet/`), `layouts/`, `components/`
-- `/mongo-init/` — Script JS que crea el usuario `welve_app` al primer arranque de Mongo
+- `/mongo-init/` — Script JS para crear el usuario `welve_app` al primer arranque de un Mongo local.
+  **Actualmente huérfano**: `docker-compose.yml` no tiene un servicio `mongo` que lo ejecute (la DB es
+  Atlas). No editar asumiendo que corre; si se necesita, es contexto para un futuro Mongo local.
 
 ### Frontend: flujo de datos
 

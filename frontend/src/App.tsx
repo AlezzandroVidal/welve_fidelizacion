@@ -13,6 +13,9 @@ import CanjesPage from "./pages/admin/CanjesPage";
 import RetosPage from "./pages/admin/RetosPage";
 import MembresiasPage from "./pages/admin/MembresiasPage";
 import ConfigPage from "./pages/admin/ConfigPage";
+import QRPage from "./pages/admin/QRPage";
+import QRVisitaPage from "./pages/qr/QRVisitaPage";
+import QRCuponPage from "./pages/qr/QRCuponPage";
 import WalletLayout from "./layouts/WalletLayout";
 import InicioPage from "./pages/wallet/InicioPage";
 import EmpresaDetallePage from "./pages/wallet/EmpresaDetallePage";
@@ -50,7 +53,20 @@ export default function App() {
               <Route path="retos"     element={<RetosPage />} />
               <Route path="membresias" element={<MembresiasPage />} />
               <Route path="config"    element={<ConfigPage />} />
+              <Route path="qr"        element={<QRPage />} />
             </Route>
+
+            {/* QR — pantallas fullscreen sin sidebar */}
+            {/* Código universal de visita: pública, funciona con o sin sesión de cliente */}
+            <Route path="/qr/visita/:empresaId" element={<QRVisitaPage />} />
+            <Route
+              path="/qr/cupon/:cuponId"
+              element={
+                <ProtectedRoute allowedRoles={["empresa"]}>
+                  <QRCuponPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Cliente wallet */}
             <Route

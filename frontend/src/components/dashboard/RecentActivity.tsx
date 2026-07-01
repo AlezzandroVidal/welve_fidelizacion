@@ -1,4 +1,4 @@
-import { QrCode, Link as LinkIcon, UserCheck } from "lucide-react";
+import { QrCode, Link as LinkIcon, UserCheck, Sparkles } from "lucide-react";
 import { Card } from "../ui";
 import { Skeleton } from "../ui";
 import { useCanjes } from "../../hooks/useCanjes";
@@ -35,6 +35,7 @@ const CANAL_ICONS: Record<string, { icon: typeof QrCode; color: string }> = {
   qr:           { icon: QrCode,    color: "text-blue-500"   },
   magic_link:   { icon: LinkIcon,  color: "text-purple-500" },
   staff_manual: { icon: UserCheck, color: "text-welve-500"  },
+  automatico:   { icon: Sparkles,  color: "text-green-500"  },
 };
 
 /* ── Component ───────────────────────────────────────────────────────────── */

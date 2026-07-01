@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Search, Coffee, Sparkles, ShoppingBag, UtensilsCrossed, MoreHorizontal, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { useEmpresasWallet, usePerfil } from '../../hooks/useWallet';
 
 const CATEGORIAS = [
@@ -14,13 +13,13 @@ const CATEGORIAS = [
 ];
 
 export default function InicioPage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState('todos');
 
   const { data: empresasData, isLoading } = useEmpresasWallet();
   const { data: perfilData } = usePerfil();
+  const nombreCliente = perfilData?.cliente?.nombre?.split(' ')[0];
 
   const empresas = empresasData || [];
   
@@ -50,7 +49,7 @@ export default function InicioPage() {
     <div className="pb-8">
       {/* HERO */}
       <div className="bg-welve-600 text-white px-6 pt-8 pb-14 rounded-b-[40px] shadow-lg relative">
-        <h1 className="text-2xl font-bold mb-2">¡Bienvenido, {(user as any)?.nombre?.split(' ')[0]}! 👋</h1>
+        <h1 className="text-2xl font-bold mb-2">¡Bienvenido{nombreCliente ? `, ${nombreCliente}` : ''}! 👋</h1>
         <p className="text-welve-100 text-sm mb-6">Descubre beneficios en tus lugares favoritos</p>
         
         {/* CHIPS RESUMEN */}

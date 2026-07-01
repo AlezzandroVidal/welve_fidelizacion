@@ -1,5 +1,5 @@
 import { useHistorial } from '../../hooks/useWallet';
-import { QrCode, Link2, UserCheck, Clock } from 'lucide-react';
+import { QrCode, Link2, UserCheck, Clock, Sparkles } from 'lucide-react';
 
 export default function HistorialPage() {
   const { data, isLoading } = useHistorial(1);
@@ -51,6 +51,7 @@ export default function HistorialPage() {
     switch(canal) {
       case 'qr': return <QrCode size={14} className="text-purple-600" />;
       case 'link': return <Link2 size={14} className="text-blue-600" />;
+      case 'automatico': return <Sparkles size={14} className="text-green-600" />;
       default: return <UserCheck size={14} className="text-emerald-600" />;
     }
   };
@@ -59,6 +60,7 @@ export default function HistorialPage() {
     switch(canal) {
       case 'qr': return 'bg-purple-100';
       case 'link': return 'bg-blue-100';
+      case 'automatico': return 'bg-green-100';
       default: return 'bg-emerald-100';
     }
   };
@@ -70,7 +72,7 @@ export default function HistorialPage() {
       <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
         {Object.entries(groups).map(([groupName, groupItems]) => (
           <div key={groupName} className="relative">
-            <div className="sticky top-14 z-10 bg-[#EDEBFB]/90 backdrop-blur-sm py-2">
+            <div className="sticky top-14 z-10 bg-welve-100/90 backdrop-blur-sm py-2">
               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider capitalize-first ml-12">
                 {groupName}
               </h3>
@@ -79,7 +81,7 @@ export default function HistorialPage() {
             <div className="space-y-6 mt-4">
               {groupItems.map((item: any) => (
                 <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-[#EDEBFB] bg-white text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-welve-100 bg-white text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getCanalColor(item.canal)}`}>
                       {getCanalIcon(item.canal)}
                     </div>

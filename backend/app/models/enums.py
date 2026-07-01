@@ -62,6 +62,7 @@ class CanalCanje(str, Enum):
     qr = "qr"
     magic_link = "magic_link"
     staff_manual = "staff_manual"
+    automatico = "automatico"
 
 
 class WelveAdminRol(str, Enum):

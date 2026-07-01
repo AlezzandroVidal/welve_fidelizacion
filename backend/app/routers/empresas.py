@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.deps import get_current_empresa
@@ -5,10 +6,22 @@ from app.models.empresa import Empresa
 from app.schemas.empresa import (
     EmpresaRegister, EmpresaResponse, LoginRequest, TokenResponse,
     EmpresaUpdate, EmpresaLogoUpload,
+    RecompensaAutomaticaCreate, RecompensaAutomaticaResponse, RecompensaAutomaticaUpdate,
 )
-from app.services import empresa_service
+from app.services import cupon_service, empresa_service
 
 router = APIRouter(prefix="/empresas", tags=["empresas"])
+
+
+def _recompensa_to_response(r: dict) -> RecompensaAutomaticaResponse:
+    return RecompensaAutomaticaResponse(
+        index=r["index"],
+        visitasRequeridas=r["visitas_requeridas"],
+        cuponId=r["cupon_id"],
+        cuponNombre=r["cupon_nombre"],
+        activa=r["activa"],
+        descripcion=r["descripcion"],
+    )
 
 
 def _to_response(e: Empresa) -> EmpresaResponse:
@@ -92,3 +105,68 @@ async def delete_logo(empresa: Empresa = Depends(get_current_empresa)):
     empresa.logo_url = None
     await empresa.save()
     return _to_response(empresa)
+
+
+@router.get("/me/recompensas-automaticas", response_model=list[RecompensaAutomaticaResponse])
+async def listar_recompensas_automaticas(empresa: Empresa = Depends(get_current_empresa)):
+    items = await empresa_service.listar_recompensas_automaticas(empresa)
+    return [_recompensa_to_response(i) for i in items]
+
+
+@router.post(
+    "/me/recompensas-automaticas",
+    response_model=list[RecompensaAutomaticaResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def crear_recompensa_automatica(
+    data: RecompensaAutomaticaCreate, empresa: Empresa = Depends(get_current_empresa),
+):
+    try:
+        cupon_id = PydanticObjectId(data.cupon_id)
+    except Exception:
+        raise HTTPException(status_code=422, detail="cupon_id inválido")
+    cupon = await cupon_service.obtener_cupon(empresa.id, cupon_id)
+    if not cupon:
+        raise HTTPException(status_code=404, detail="Cupón no encontrado en esta empresa")
+
+    empresa = await empresa_service.agregar_recompensa_automatica(empresa, data, cupon_id)
+    items = await empresa_service.listar_recompensas_automaticas(empresa)
+    return [_recompensa_to_response(i) for i in items]
+
+
+@router.patch(
+    "/me/recompensas-automaticas/{index}",
+    response_model=list[RecompensaAutomaticaResponse],
+)
+async def editar_recompensa_automatica(
+    index: int, data: RecompensaAutomaticaUpdate, empresa: Empresa = Depends(get_current_empresa),
+):
+    cupon_id = None
+    if data.cupon_id is not None:
+        try:
+            cupon_id = PydanticObjectId(data.cupon_id)
+        except Exception:
+            raise HTTPException(status_code=422, detail="cupon_id inválido")
+        cupon = await cupon_service.obtener_cupon(empresa.id, cupon_id)
+        if not cupon:
+            raise HTTPException(status_code=404, detail="Cupón no encontrado en esta empresa")
+
+    ok = await empresa_service.editar_recompensa_automatica(empresa, index, data, cupon_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Recompensa automática no encontrada")
+    items = await empresa_service.listar_recompensas_automaticas(empresa)
+    return [_recompensa_to_response(i) for i in items]
+
+
+@router.delete(
+    "/me/recompensas-automaticas/{index}",
+    response_model=list[RecompensaAutomaticaResponse],
+)
+async def eliminar_recompensa_automatica(
+    index: int, empresa: Empresa = Depends(get_current_empresa),
+):
+    ok = await empresa_service.eliminar_recompensa_automatica(empresa, index)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Recompensa automática no encontrada")
+    items = await empresa_service.listar_recompensas_automaticas(empresa)
+    return [_recompensa_to_response(i) for i in items]

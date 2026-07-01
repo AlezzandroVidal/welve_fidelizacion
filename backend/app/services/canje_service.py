@@ -14,10 +14,17 @@ async def crear_canje(
     cupon_id: PydanticObjectId,
     canal: CanalCanje,
     staff_ref: str | None = None,
+    registrar_visita: bool = True,
 ) -> tuple[Canje, str | None]:
     """
     Retorna (canje, error_msg). Si error_msg is not None, el canje no se creó.
-    Efecto: incrementa cupon.usos_actuales y actualiza RelacionClienteEmpresa.
+    Efecto: incrementa cupon.usos_actuales y, si registrar_visita=True (default),
+    también actualiza visitas_totales/ultima_visita en RelacionClienteEmpresa.
+
+    registrar_visita=False lo usa el flujo de validación de cupón por QR
+    (routers/qr.py), que delega el conteo completo de la visita —racha, segmento,
+    retos, recompensas automáticas— a visita_service.registrar_visita() para no
+    contar la visita dos veces.
     """
     cupon = await cupon_service.obtener_cupon(empresa_id, cupon_id)
     if not cupon:
@@ -51,17 +58,18 @@ async def crear_canje(
     await cupon.set({"usos_actuales": cupon.usos_actuales + 1, "updated_at": datetime.now(timezone.utc)})
 
     # Actualizar RelacionClienteEmpresa
-    relacion = await RelacionClienteEmpresa.find_one(
-        RelacionClienteEmpresa.empresa_id == empresa_id,
-        RelacionClienteEmpresa.cliente_id == cliente_id,
-    )
-    if relacion:
-        now = datetime.now(timezone.utc)
-        await relacion.set({
-            "visitas_totales": relacion.visitas_totales + 1,
-            "ultima_visita": now,
-            "updated_at": now,
-        })
+    if registrar_visita:
+        relacion = await RelacionClienteEmpresa.find_one(
+            RelacionClienteEmpresa.empresa_id == empresa_id,
+            RelacionClienteEmpresa.cliente_id == cliente_id,
+        )
+        if relacion:
+            now = datetime.now(timezone.utc)
+            await relacion.set({
+                "visitas_totales": relacion.visitas_totales + 1,
+                "ultima_visita": now,
+                "updated_at": now,
+            })
 
     return canje, None
 
