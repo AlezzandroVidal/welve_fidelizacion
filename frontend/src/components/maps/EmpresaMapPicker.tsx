@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import type { Marker as LeafletMarker, LeafletMouseEvent } from "leaflet";
-import "./leafletIcons";
+import { welvePinIcon } from "./leafletIcons";
 
 const LIMA: [number, number] = [-12.0464, -77.0428];
 
@@ -27,7 +27,7 @@ export default function EmpresaMapPicker({ lat, lng, onChange }: Props) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200">
-      <MapContainer center={center} zoom={hasLocation ? 16 : 12} style={{ height: 260, width: "100%" }}>
+      <MapContainer center={center} zoom={hasLocation ? 16 : 12} style={{ height: 260, width: "100%" }} className="welve-map">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -38,6 +38,7 @@ export default function EmpresaMapPicker({ lat, lng, onChange }: Props) {
             position={center}
             draggable
             ref={markerRef}
+            icon={welvePinIcon}
             eventHandlers={{
               dragend: () => {
                 const pos = markerRef.current?.getLatLng();

@@ -46,3 +46,11 @@
 @media (hover: none) {
   .hover-lift:hover { transform: none !important; }
 }
+
+/* ── Mapa Leaflet teñido al morado de Welve ──────────────────────────────── */
+/* grayscale quita el verde/azul/amarillo de OSM; sepia mete un tinte cálido
+   monocromo; hue-rotate lo empuja de marrón (~35°) a violeta (~265°, el hue
+   de #7C5CFC); saturate lo recupera del lavado que deja sepia+hue-rotate. */
+.welve-map .leaflet-tile-pane {
+  filter: grayscale(1) sepia(0.6) hue-rotate(230deg) saturate(1.8) brightness(1.02) contrast(0.95);
+}
