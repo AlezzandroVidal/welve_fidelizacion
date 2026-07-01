@@ -2,7 +2,6 @@
   "name": "Welve Dev",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
   "workspaceFolder": "/workspaces/welve_fidelizacion",
-
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.11"
@@ -10,9 +9,8 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
     },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -20,14 +18,9 @@
         "ms-python.vscode-pylance",
         "ms-python.black-formatter",
         "charliermarsh.ruff",
-        "mongodb.mongodb-vscode",
-        "ms-azuretools.vscode-docker",
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
-        "formulahendry.auto-rename-tag",
-        "eamodio.gitlens",
-        "mhutchie.git-graph",
         "humao.rest-client"
       ],
       "settings": {
@@ -43,17 +36,12 @@
       }
     }
   },
-
-  "postCreateCommand": "cp .env.example .env && pip install -r backend/requirements.txt && cd frontend && npm install",
-
-  "postStartCommand": "docker compose up -d mongo redis",
-
-  "forwardPorts": [8000, 5173, 27017, 6379, 80],
+  "postCreateCommand": "cp .env.example .env && pip install -r backend/requirements.txt --break-system-packages && cd frontend && npm install",
+  "postStartCommand": "docker compose up redis -d",
+  "forwardPorts": [8000, 5173, 6379],
   "portsAttributes": {
     "8000": { "label": "Backend API", "onAutoForward": "notify" },
     "5173": { "label": "Frontend Dev", "onAutoForward": "openBrowser" },
-    "27017": { "label": "MongoDB", "onAutoForward": "silent" },
-    "6379": { "label": "Redis", "onAutoForward": "silent" },
-    "80": { "label": "Frontend Prod", "onAutoForward": "silent" }
+    "6379": { "label": "Redis", "onAutoForward": "silent" }
   }
 }
