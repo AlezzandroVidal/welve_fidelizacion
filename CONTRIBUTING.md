@@ -93,6 +93,22 @@ chore: actualizar versión de FastAPI a 0.115
 
 ---
 
+## Seguimiento del roadmap
+
+El avance del proyecto se trackea en el tab **Projects** del repo (vista
+**Roadmap**) — no con un Gantt hecho a mano. Cada PR se agrega como item del
+proyecto con fecha de inicio/fin, así el roadmap queda actualizado solo, sin
+mantenimiento manual.
+
+- Al abrir un PR, agregarlo al proyecto **"Welve Roadmap"**.
+- Las ramas **no se borran automáticamente al mergear**. Quedan visibles junto
+  al PR (en el selector de ramas y en `Insights → Network`) para poder
+  auditar qué se hizo — se limpian manualmente más adelante si hace falta.
+  El historial en `main` no depende de esto: una vez mergeado el PR, el
+  commit ya vive en `main` sin importar si la rama sigue existiendo o no.
+
+---
+
 ## Protección de rama `main` (configurar en GitHub)
 
 Ir a **Settings → Branches → Add rule** y activar:
