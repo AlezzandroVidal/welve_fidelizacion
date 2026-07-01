@@ -71,7 +71,11 @@ cd frontend && npm run dev
 cd frontend && npm run lint
 
 # Celery worker (desarrollo local sin Docker)
-cd backend && celery -A app.worker.celery_app worker --loglevel=info
+# -B corre beat embebido en el mismo proceso: son los jobs periódicos de
+# romper rachas / expirar cupones / evaluar exclusivos / notificar retos
+# (ver app/worker/celery_app.py). Sin -B el worker consume tareas encoladas
+# pero nunca dispara nada por su cuenta.
+cd backend && celery -A app.worker.celery_app worker -B --loglevel=info
 
 # Seed de datos de ejemplo (idempotente — no duplica si ya existen)
 cd backend && python scripts/seed.py
@@ -138,7 +142,22 @@ Módulos: `empresas` (incluye auth admin), `admin_auth` (login WelveAdmin, prefi
 `clientes`, `relaciones` (historial/racha/segmento), `cupones`, `retos`, `membresias`, `canjes`,
 `auth_cliente` (magic link/QR), `metricas` (dashboard, solo lectura),
 `wallet` (vista del cliente final sobre todas sus empresas — el único router sin prefijo propio;
-recibe `/api/v1/wallet` al registrarse en `main.py`).
+recibe `/api/v1/wallet` al registrarse en `main.py`),
+`qr` (`/api/v1/qr/...` — escaneo público: info de empresa, primera afiliación, validación de cupón
+por staff), `staff` (`/api/v1/staff/...` — flujos protegidos por `get_current_empresa_admin` para que
+el personal del local registre visitas/canjes de un cliente identificado por `codigo_cliente` o QR).
+
+`qr`/`staff` no mapean 1:1 a una colección propia: operan sobre `RelacionClienteEmpresa` y `Canje` a
+través de `services/visita_service.py` (único punto que incrementa `visitas_totales`, evalúa racha/
+segmento/recompensas — ver `recompensas_engine.py`) y `services/staff_service.py` (busca al cliente por
+`codigo_cliente`, formato `WLV-XXXX`, indexado único por `(empresa_id, codigo_cliente)` en
+`RelacionClienteEmpresa`).
+
+**Regla de anti-fraude (visitas/canjes)**: tras la afiliación inicial (`POST /qr/empresa/{id}/afiliar`,
+la única acción de auto-registro que puede hacer un cliente), el cliente **no puede** registrarse
+visitas a sí mismo — `POST /qr/visita/{empresa_id}` devuelve 403 siempre. Toda visita o canje
+posterior lo registra el staff de la empresa (`routers/staff.py`, JWT de empresa), identificando al
+cliente por `codigo_cliente` o escaneando su QR personal (`GET /wallet/mi-qr/{empresa_id}`).
 
 **Al agregar un nuevo módulo**, registrar el modelo Beanie en **dos lugares**:
 1. `app/db/mongodb.py` → lista `document_models` del `init_beanie()`
@@ -161,6 +180,8 @@ donde el cliente ve el agregado de todas sus empresas.
 
 La fuente de verdad de las dependencias está en `app/core/dependencies.py`.
 `app/core/deps.py` es un shim de compatibilidad que re-exporta todo desde allí — no editarlo directamente.
+`get_current_empresa` es un alias de `get_current_empresa_admin` (misma dependencia, dos nombres) — usar
+cualquiera de los dos es equivalente.
 
 **Magic link en desarrollo**: cuando `ENVIRONMENT=development`, el endpoint
 `POST /api/v1/auth/cliente/magic-link` devuelve `devToken` y `verifyUrl` directamente
@@ -196,6 +217,18 @@ Las páginas consumen hooks, nunca llaman a `api/` directamente.
 
 ## Worker Celery
 
-Archivo: `backend/app/worker/tasks.py`. Estado actual: stubs de notificación
-(`enviar_whatsapp`, `enviar_email`) sin integración real — pendientes de conectar
-con WhatsApp Cloud API y SendGrid/Resend respectivamente.
+Archivo: `backend/app/worker/tasks.py`. `enviar_whatsapp`/`enviar_email` son stubs
+sin integración real — pendientes de conectar con WhatsApp Cloud API y
+SendGrid/Resend respectivamente.
+
+Además hay 4 jobs periódicos programados en `app/worker/celery_app.py`
+(`conf.beat_schedule`, requiere correr el worker con `-B` — ver comando arriba):
+`romper_rachas` (diario), `expirar_cupones` (diario), `evaluar_exclusivos`
+(diario, sube/baja el segmento VIP según `EmpresaConfig.umbral_exclusivo_*` y
+`dias_gracia_exclusivo`) y `notificar_retos_activos` (cada 15 min). Cada uno es
+un wrapper `@celery_app.task` sync que llama `asyncio.run(...)` sobre una función
+`async` reusable en su servicio de dominio (`visita_service.romper_rachas_inactivas`,
+`cupon_service.expirar_cupones_vencidos`, `segmento_service.evaluar_exclusivos_todas_empresas`,
+`reto_service.notificar_retos_pendientes`) — cada invocación crea su propio
+cliente Motor vía `init_db()` para evitar reusar una conexión entre event loops
+distintos.
