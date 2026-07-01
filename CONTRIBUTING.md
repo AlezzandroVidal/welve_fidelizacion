@@ -68,13 +68,16 @@ chore: actualizar versión de FastAPI a 0.115
 
 ## Flujo de Pull Request
 
-1. Crea tu rama desde `main`:
+Aplica igual para `feature/`, `fix/`, `docs/` o `chore/` — cualquier rama que
+se abra sigue estos mismos pasos, con `gh` CLI (ver instalación más abajo).
+
+1. Crea tu rama desde `main`, con el prefijo que corresponda:
    ```bash
    git checkout main && git pull
-   git checkout -b feature/mi-feature
+   git checkout -b feature/mi-feature   # o fix/, docs/, chore/
    ```
 
-2. Desarrolla en commits pequeños y semánticos.
+2. Desarrolla en commits pequeños y semánticos (Conventional Commits, ver arriba).
 
 3. Antes de abrir el PR, asegúrate de que los tests pasen:
    ```bash
@@ -85,27 +88,93 @@ chore: actualizar versión de FastAPI a 0.115
    cd frontend && npm test
    ```
 
-4. Abre el PR contra `main` usando la plantilla en `.github/PULL_REQUEST_TEMPLATE.md`.
+4. Pushea la rama y abre el PR (usa la plantilla de `.github/PULL_REQUEST_TEMPLATE.md` en el body):
+   ```bash
+   git push -u origin feature/mi-feature
+   gh pr create --base main --title "feat(scope): descripción corta" --body "..."
+   ```
 
-5. Al menos 1 aprobación antes de hacer merge.
+5. Agrega el PR al roadmap con fecha de inicio de hoy (ver comandos en
+   "Seguimiento del roadmap" más abajo) — así queda visible en
+   [**Welve Roadmap**](https://github.com/users/AlezzandroVidal/projects/1)
+   desde que se abre, no solo cuando se mergea.
 
-6. Usar **Squash and Merge** para mantener el historial limpio en `main`.
+6. Al menos 1 aprobación antes de hacer merge.
+
+7. Mergear con **Squash and Merge**:
+   ```bash
+   gh pr merge <número> --squash --subject "..." --body "..."
+   ```
+
+8. Actualiza la fecha de fin (`Target date`) del item en el roadmap a la fecha de merge.
+
+9. **No borrar la rama** — queda visible junto al PR para poder auditar qué
+   se hizo. El historial en `main` no depende de esto: una vez mergeado el
+   PR, el commit ya vive en `main` sin importar si la rama sigue existiendo.
 
 ---
 
 ## Seguimiento del roadmap
 
-El avance del proyecto se trackea en el tab **Projects** del repo (vista
-**Roadmap**) — no con un Gantt hecho a mano. Cada PR se agrega como item del
-proyecto con fecha de inicio/fin, así el roadmap queda actualizado solo, sin
-mantenimiento manual.
+El avance del proyecto se trackea en la vista **Roadmap** del proyecto
+[**Welve Roadmap**](https://github.com/users/AlezzandroVidal/projects/1) — no
+con un Gantt hecho a mano. Cada PR se agrega como item con fecha de
+inicio/fin, así el roadmap queda actualizado solo.
 
-- Al abrir un PR, agregarlo al proyecto **"Welve Roadmap"**.
-- Las ramas **no se borran automáticamente al mergear**. Quedan visibles junto
-  al PR (en el selector de ramas y en `Insights → Network`) para poder
-  auditar qué se hizo — se limpian manualmente más adelante si hace falta.
-  El historial en `main` no depende de esto: una vez mergeado el PR, el
-  commit ya vive en `main` sin importar si la rama sigue existiendo o no.
+### GitHub CLI (`gh`)
+
+Todo el flujo de arriba (crear PR, agregarlo al roadmap, mergear) usa `gh`.
+Si no está instalado:
+
+```bash
+type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt update && sudo apt install gh -y
+```
+
+En Codespaces, `gh` ya viene autenticado vía `GITHUB_TOKEN`, pero ese token
+**no** tiene el scope `project` (API de GitHub Projects). Para los comandos
+`gh project *` hace falta un token con ese scope:
+
+```bash
+gh auth refresh -s project,read:project   # flujo interactivo, correrlo en una terminal propia
+```
+
+...y anteponer `env -u GITHUB_TOKEN` a los comandos `gh project *` para que
+use ese token en vez del de Codespaces (que `gh` prioriza por default y no
+tiene el scope necesario).
+
+### Agregar un PR al roadmap
+
+La API de GitHub Projects no expone un comando para crear o editar *vistas*
+(Board/Table/Roadmap) — ese paso es manual, un clic, una sola vez (ya está
+hecho para este repo). Agregar items y fechas sí es 100% scriptable:
+
+```bash
+# IDs fijos del proyecto "Welve Roadmap" (owner: AlezzandroVidal, project #1)
+PROJECT_ID="PVT_kwHOEGdJUc4BcJfC"
+START_FIELD="PVTF_lAHOEGdJUc4BcJfCzhW0Yk8"
+TARGET_FIELD="PVTF_lAHOEGdJUc4BcJfCzhW0YlU"
+
+# 1. Agregar el PR (devuelve el item ID — guardalo para los pasos 2 y 3)
+ITEM_ID=$(env -u GITHUB_TOKEN gh project item-add 1 --owner AlezzandroVidal \
+  --url https://github.com/AlezzandroVidal/welve_fidelizacion/pull/<número> \
+  --format json -q .id)
+
+# 2. Fecha de inicio = hoy (al abrir el PR)
+env -u GITHUB_TOKEN gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" \
+  --field-id "$START_FIELD" --date "$(date +%F)"
+
+# 3. Fecha de fin = hoy (al mergear el PR)
+env -u GITHUB_TOKEN gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" \
+  --field-id "$TARGET_FIELD" --date "$(date +%F)"
+```
+
+Si se agregan campos nuevos al proyecto, correr
+`gh project field-list 1 --owner AlezzandroVidal` para ver los IDs
+actuales — no asumir que los de arriba son los únicos que existen.
 
 ---
 
