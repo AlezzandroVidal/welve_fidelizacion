@@ -1,12 +1,37 @@
-import { usePerfil } from '../../hooks/useWallet';
+import { useState } from 'react';
+import { LogOut } from 'lucide-react';
+import { usePerfil, useUpdatePerfil, useUploadFoto, useDeleteFoto, useCambiarPassword } from '../../hooks/useWallet';
 import { useAuth } from '../../context/AuthContext';
-import { Flame, Ticket, Store, Award, LogOut, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../hooks/useToast';
+import { Toaster } from '../../components/ui';
+import PerfilHeader from '../../components/wallet/perfil/PerfilHeader';
+import PerfilStats from '../../components/wallet/perfil/PerfilStats';
+import MisRelacionesList from '../../components/wallet/perfil/MisRelacionesList';
+import FotoModal from '../../components/wallet/perfil/FotoModal';
+import EditarPerfilModal from '../../components/wallet/perfil/EditarPerfilModal';
+import CambiarPasswordModal from '../../components/wallet/perfil/CambiarPasswordModal';
+import type { PerfilUpdateDto } from '../../api/wallet';
+
+function errorDetail(e: unknown, fallback: string): string {
+  const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+  return msg ?? fallback;
+}
 
 export default function PerfilPage() {
   const { data, isLoading } = usePerfil();
   const { logout } = useAuth();
-  const navigate = useNavigate();
+  const toast = useToast();
+
+  const [fotoOpen, setFotoOpen] = useState(false);
+  const [editarOpen, setEditarOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [editarError, setEditarError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const updatePerfil = useUpdatePerfil();
+  const uploadFoto = useUploadFoto();
+  const deleteFoto = useDeleteFoto();
+  const cambiarPassword = useCambiarPassword();
 
   if (isLoading || !data) {
     return <div className="p-6 text-center animate-pulse">Cargando perfil...</div>;
@@ -15,123 +40,105 @@ export default function PerfilPage() {
   const { cliente, resumen, total_canjes, total_empresas, total_puntos_global, racha_maxima_global } = data;
 
   const handleLogout = () => {
-    if (window.confirm("¿Seguro que deseas cerrar sesión?")) {
-      logout();
-    }
+    if (window.confirm("¿Seguro que deseas cerrar sesión?")) logout();
   };
+
+  async function handleGuardarPerfil(update: PerfilUpdateDto) {
+    setEditarError('');
+    try {
+      await updatePerfil.mutateAsync(update);
+      setEditarOpen(false);
+      toast.success('Perfil actualizado');
+    } catch (e) {
+      setEditarError(errorDetail(e, 'No se pudo actualizar el perfil.'));
+    }
+  }
+
+  async function handleGuardarPassword(passwordActual: string | null, passwordNueva: string) {
+    setPasswordError('');
+    try {
+      await cambiarPassword.mutateAsync({ passwordActual, passwordNueva });
+      setPasswordOpen(false);
+      toast.success('Contraseña actualizada');
+    } catch (e) {
+      setPasswordError(errorDetail(e, 'No se pudo cambiar la contraseña.'));
+    }
+  }
+
+  async function handleUploadFoto(dataUri: string) {
+    try {
+      await uploadFoto.mutateAsync(dataUri);
+      setFotoOpen(false);
+    } catch (e) {
+      toast.error(errorDetail(e, 'No se pudo subir la foto.'));
+    }
+  }
+
+  async function handleDeleteFoto() {
+    try {
+      await deleteFoto.mutateAsync();
+      setFotoOpen(false);
+    } catch (e) {
+      toast.error(errorDetail(e, 'No se pudo eliminar la foto.'));
+    }
+  }
 
   return (
     <div className="pb-10">
-      {/* HEADER */}
-      <div className="bg-white pt-10 pb-8 px-6 rounded-b-[40px] shadow-sm flex flex-col items-center border-b border-gray-100 relative">
-        <div className="w-24 h-24 bg-gradient-to-br from-welve-400 to-welve-600 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-welve-500/30 border-4 border-white mb-4">
-          {cliente.nombre.charAt(0).toUpperCase()}
-        </div>
-        <h1 className="text-xl font-bold text-gray-900 text-center">{cliente.nombre}</h1>
-        <p className="text-gray-500 text-sm mt-1">{cliente.email}</p>
-        {cliente.whatsapp && <p className="text-gray-500 text-sm mt-1">{cliente.whatsapp}</p>}
-        
-        {/* Boton Editar (solo UI por ahora) */}
-        <button className="mt-4 text-xs font-semibold text-welve-600 bg-welve-50 px-4 py-1.5 rounded-full hover:bg-welve-100 transition-colors">
-          Editar perfil
-        </button>
-      </div>
+      <PerfilHeader
+        cliente={cliente}
+        onEditarFoto={() => setFotoOpen(true)}
+        onEditarPerfil={() => setEditarOpen(true)}
+        onEditarPassword={() => setPasswordOpen(true)}
+      />
 
-      <div className="px-6 mt-6">
-        {/* STATS */}
-        <div className="grid grid-cols-2 gap-3 mb-8">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-              <Ticket size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-gray-400">Canjes</p>
-              <p className="text-lg font-black text-gray-800">{total_canjes}</p>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500">
-              <Store size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-gray-400">Lugares</p>
-              <p className="text-lg font-black text-gray-800">{total_empresas}</p>
-            </div>
-          </div>
+      <div className="mt-6 px-6">
+        <PerfilStats
+          totalCanjes={total_canjes}
+          totalEmpresas={total_empresas}
+          totalPuntos={total_puntos_global}
+          rachaMaxima={racha_maxima_global}
+        />
 
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600">
-              <Award size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-gray-400">Puntos</p>
-              <p className="text-lg font-black text-gray-800">{total_puntos_global}</p>
-            </div>
-          </div>
+        <h2 className="mb-4 px-1 text-lg font-bold text-gray-800">Mis Relaciones</h2>
+        <MisRelacionesList resumen={resumen} />
 
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
-              <Flame size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-gray-400">Racha Max</p>
-              <p className="text-lg font-black text-gray-800">{racha_maxima_global}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* MIS EMPRESAS */}
-        <h2 className="text-lg font-bold text-gray-800 mb-4 px-1">Mis Relaciones</h2>
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-          {resumen.length > 0 ? resumen.map((res: any, idx: number) => (
-            <div 
-              key={res.empresa.id}
-              onClick={() => navigate(`/wallet/empresa/${res.empresa.id}`)}
-              className={`flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors ${idx !== resumen.length - 1 ? 'border-b border-gray-50' : ''}`}
-            >
-              <div className="flex items-center gap-3">
-                {res.empresa.logo_url ? (
-                  <img src={res.empresa.logo_url} alt="logo" className="w-10 h-10 rounded-full object-cover" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
-                    {res.empresa.nombre.charAt(0)}
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-bold text-sm text-gray-800">{res.empresa.nombre}</h3>
-                  <p className="text-xs text-gray-500">{res.visitas} visitas • {res.puntos} pts</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {res.segmento === 'exclusivo' && (
-                  <span className="text-[10px] font-bold bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">VIP</span>
-                )}
-                {res.racha > 0 && (
-                  <div className="flex items-center gap-1 text-xs font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-full">
-                    <Flame size={12} fill="currentColor" /> {res.racha}
-                  </div>
-                )}
-                <ChevronRight size={16} className="text-gray-300 ml-1" />
-              </div>
-            </div>
-          )) : (
-            <div className="p-8 text-center text-gray-500 text-sm">
-              Aún no tienes relación con ninguna empresa.
-            </div>
-          )}
-        </div>
-
-        {/* LOGOUT */}
-        <button 
+        <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 text-rose-500 font-bold py-4 rounded-2xl hover:bg-rose-50 transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-bold text-rose-500 transition-colors hover:bg-rose-50"
         >
           <LogOut size={20} />
           Cerrar sesión
         </button>
       </div>
+
+      <FotoModal
+        open={fotoOpen}
+        onClose={() => setFotoOpen(false)}
+        currentFoto={cliente.foto_url}
+        nombre={cliente.nombre}
+        onUpload={handleUploadFoto}
+        onDelete={handleDeleteFoto}
+        isLoading={uploadFoto.isPending || deleteFoto.isPending}
+      />
+      <EditarPerfilModal
+        open={editarOpen}
+        onClose={() => setEditarOpen(false)}
+        cliente={cliente}
+        onSave={handleGuardarPerfil}
+        isLoading={updatePerfil.isPending}
+        error={editarError}
+      />
+      <CambiarPasswordModal
+        open={passwordOpen}
+        onClose={() => setPasswordOpen(false)}
+        tienePassword={cliente.tiene_password}
+        onSave={handleGuardarPassword}
+        isLoading={cambiarPassword.isPending}
+        error={passwordError}
+      />
+
+      <Toaster toasts={toast.toasts} onDismiss={toast.dismiss} />
     </div>
   );
 }

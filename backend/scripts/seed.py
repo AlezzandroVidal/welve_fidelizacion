@@ -3,6 +3,8 @@ Script de seed idempotente. Ejecutar:
     cd backend && python scripts/seed.py
 """
 import asyncio
+import random
+import string
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -223,6 +225,14 @@ async def seed_empresas() -> list[Empresa]:
     return empresas
 
 
+async def _generar_codigo_cliente_unico() -> str:
+    chars = string.ascii_uppercase + string.digits
+    while True:
+        codigo = "WLV-" + "".join(random.choices(chars, k=4))
+        if not await Cliente.find_one(Cliente.codigo_cliente == codigo):
+            return codigo
+
+
 async def seed_clientes() -> list[Cliente]:
     clientes: list[Cliente] = []
     for data in CLIENTES_DATA:
@@ -238,6 +248,7 @@ async def seed_clientes() -> list[Cliente]:
                 email=data["email"],
                 whatsapp=data["whatsapp"],
                 password_hash=hash_password("password123"),
+                codigo_cliente=await _generar_codigo_cliente_unico(),
                 fecha_alta=_ago(data["dias_alta"]),
             ).insert()
             clientes.append(obj)

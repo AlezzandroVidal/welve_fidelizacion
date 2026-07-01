@@ -256,7 +256,7 @@ async def get_perfil(cliente_id: PydanticObjectId) -> Dict[str, Any]:
             "visitas": r.visitas_totales,
             "puntos": r.puntos,
             "racha": r.racha_actual,
-            "segmento": r.segmento
+            "segmento": r.segmento,
         })
         total_puntos += r.puntos
         if r.racha_maxima > racha_max:
@@ -268,11 +268,37 @@ async def get_perfil(cliente_id: PydanticObjectId) -> Dict[str, Any]:
         "cliente": {
             "nombre": cliente.nombre,
             "email": cliente.email,
-            "whatsapp": getattr(cliente, "whatsapp", None)
+            "whatsapp": getattr(cliente, "whatsapp", None),
+            "foto_url": getattr(cliente, "foto_url", None),
+            "tiene_password": cliente.password_hash is not None,
+            "codigo_cliente": cliente.codigo_cliente,
         },
         "resumen": resumen,
         "total_canjes": total_canjes,
         "total_empresas": len(resumen),
         "total_puntos_global": total_puntos,
         "racha_maxima_global": racha_max
+    }
+
+async def get_mi_qr(empresa_id: PydanticObjectId, cliente_id: PydanticObjectId) -> Dict[str, Any]:
+    """QR/código personal del cliente — es GLOBAL (mismo codigo_cliente en
+    cualquier empresa, ver Cliente.codigo_cliente): cualquier staff que lo
+    escanee o lo ingrese reconoce al cliente, incluso si nunca lo visitó
+    antes (ver staff_service). empresa_id solo se usa para mostrar el nombre/
+    logo del negocio en el que el cliente está parado."""
+    cliente = await Cliente.get(cliente_id)
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    emp = await Empresa.get(empresa_id)
+    if not emp:
+        raise HTTPException(status_code=404, detail="Empresa no encontrada")
+
+    return {
+        "codigo_cliente": cliente.codigo_cliente,
+        "qr_data": f"welve://cliente/{cliente_id}",
+        "empresa": {
+            "nombre": emp.nombre,
+            "logo_url": getattr(emp, "logo_url", None),
+        },
     }

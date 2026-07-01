@@ -20,6 +20,7 @@ class RelacionClienteEmpresa(Document):
     ultima_visita: Optional[datetime] = None
     segmento: SegmentoCliente = SegmentoCliente.regular
     fecha_entrada_segmento: Optional[datetime] = None
+    fecha_ultimo_cumplimiento_exclusivo: Optional[datetime] = None  # último día que cumplió el umbral (regla de gracia)
     puntos: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

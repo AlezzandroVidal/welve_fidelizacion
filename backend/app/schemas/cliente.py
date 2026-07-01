@@ -29,6 +29,22 @@ class ClienteResponse(BaseModel):
     ultimaVisita: Optional[str] = None
 
 
+class PerfilUpdateRequest(BaseModel):
+    nombre: Optional[str] = None
+    email: Optional[str] = None
+    whatsapp: Optional[str] = None
+
+
+class CambiarPasswordRequest(BaseModel):
+    password_actual: Optional[str] = None  # None solo si el cliente nunca tuvo password (login por magic link)
+    password_nueva: str
+
+
+class FotoClienteUpload(BaseModel):
+    """data URI base64 (data:image/...;base64,...) — máx ~2 MB."""
+    data_uri: str
+
+
 class MagicLinkRequest(BaseModel):
     empresa_id: str
     email: Optional[str] = None
