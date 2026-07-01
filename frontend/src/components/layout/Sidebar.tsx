@@ -37,8 +37,9 @@ function NavItem({ item: { to, icon: Icon, label, badge, end }, collapsed }: Nav
       end={end}
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
-        `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
+        `group relative flex items-center rounded-xl py-2.5 text-sm font-medium
          transition-colors duration-150 border-l-[3px]
+         ${collapsed ? "justify-center px-0" : "gap-3 px-3"}
          ${isActive
            ? "border-welve-500 bg-welve-500/10 text-white"
            : "border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200"}`
@@ -128,8 +129,8 @@ function AvatarMenu({ nombre, subtitulo, imagenUrl, collapsed, menuItems, onLogo
       <button
         ref={btnRef}
         onClick={toggle}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left
-          hover:bg-white/5 transition-colors"
+        className={`flex w-full items-center rounded-xl py-2.5 hover:bg-white/5 transition-colors
+          ${collapsed ? "justify-center px-0" : "gap-3 px-3 text-left"}`}
       >
         <AvatarCircle nombre={nombre} imagenUrl={imagenUrl} size={32} />
         {!collapsed && (
