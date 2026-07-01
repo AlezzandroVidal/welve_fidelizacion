@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useEmpresaDetalle } from '../../hooks/useWallet';
 import { useAuth } from '../../context/AuthContext';
 import QRDisplay from '../../components/admin/QRDisplay';
+import EmpresaMapView from '../../components/maps/EmpresaMapView';
+import ResenasSection from '../../components/wallet/ResenasSection';
 import { Clock, MapPin, Flame, Ticket, X, QrCode, Video } from 'lucide-react';
 
 export default function EmpresaDetallePage() {
@@ -100,6 +102,12 @@ export default function EmpresaDetallePage() {
                 <p className="text-sm text-gray-600">{empresa.horario}</p>
               </div>
             )}
+          </div>
+        )}
+
+        {empresa.latitud != null && empresa.longitud != null && (
+          <div className="mb-6">
+            <EmpresaMapView lat={empresa.latitud} lng={empresa.longitud} nombre={empresa.nombre} />
           </div>
         )}
 
@@ -290,6 +298,8 @@ export default function EmpresaDetallePage() {
             ))}
           </div>
         )}
+
+        {id && <ResenasSection empresaId={id} puedeCalificar={!!mi_relacion} />}
       </div>
 
       {/* MODAL DE CANJE */}

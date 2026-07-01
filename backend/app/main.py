@@ -20,6 +20,7 @@ from app.routers import (
     wallet,
     qr,
     staff,
+    resenas,
 )
 
 
@@ -58,3 +59,4 @@ app.include_router(metricas.router, prefix="/api/v1")
 app.include_router(wallet.router, prefix="/api/v1/wallet")
 app.include_router(qr.router, prefix="/api/v1")
 app.include_router(staff.router, prefix="/api/v1")
+app.include_router(resenas.router, prefix="/api/v1")

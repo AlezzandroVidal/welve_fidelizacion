@@ -15,6 +15,7 @@ import MembresiasPage from "./pages/admin/MembresiasPage";
 import ConfigPage from "./pages/admin/ConfigPage";
 import QRPage from "./pages/admin/QRPage";
 import StaffPage from "./pages/admin/StaffPage";
+import ResenasPage from "./pages/admin/ResenasPage";
 import QRVisitaPage from "./pages/qr/QRVisitaPage";
 import QRCuponPage from "./pages/qr/QRCuponPage";
 import WalletLayout from "./layouts/WalletLayout";
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="config"    element={<ConfigPage />} />
               <Route path="qr"        element={<QRPage />} />
               <Route path="staff"     element={<StaffPage />} />
+              <Route path="resenas"   element={<ResenasPage />} />
             </Route>
 
             {/* QR — pantallas fullscreen sin sidebar */}

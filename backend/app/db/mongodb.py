@@ -21,6 +21,7 @@ async def init_db() -> None:
     from app.models.membresia import Membresia
     from app.models.membresia_cliente import MembresiaCliente
     from app.models.canje import Canje
+    from app.models.resena import Resena
 
     delays = [2, 4, 8, 16, 32]
     last_error = None
@@ -44,6 +45,7 @@ async def init_db() -> None:
                     Membresia,
                     MembresiaCliente,
                     Canje,
+                    Resena,
                 ],
             )
             logger.info("Conexión a MongoDB exitosa.")
