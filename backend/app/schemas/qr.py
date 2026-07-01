@@ -49,15 +49,18 @@ class ResultadoVisitaResponse(BaseModel):
     yaRegistradoHoy: bool = False
 
 
-class RegistroQRResponse(BaseModel):
+class AfiliarResponse(BaseModel):
+    """Respuesta de la afiliación — la única visita que el cliente registra solo."""
     accessToken: str
     tokenType: str = "bearer"
     clienteId: str
+    codigoCliente: str
     resultado: ResultadoVisitaResponse
 
 
 class ValidarCuponRequest(BaseModel):
     cliente_id: str
+    monto: float | None = None
 
 
 class ValidarCuponResponse(BaseModel):

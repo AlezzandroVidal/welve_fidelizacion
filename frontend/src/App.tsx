@@ -14,6 +14,7 @@ import RetosPage from "./pages/admin/RetosPage";
 import MembresiasPage from "./pages/admin/MembresiasPage";
 import ConfigPage from "./pages/admin/ConfigPage";
 import QRPage from "./pages/admin/QRPage";
+import StaffPage from "./pages/admin/StaffPage";
 import QRVisitaPage from "./pages/qr/QRVisitaPage";
 import QRCuponPage from "./pages/qr/QRCuponPage";
 import WalletLayout from "./layouts/WalletLayout";
@@ -22,6 +23,7 @@ import EmpresaDetallePage from "./pages/wallet/EmpresaDetallePage";
 import MisCuponesPage from "./pages/wallet/MisCuponesPage";
 import HistorialPage from "./pages/wallet/HistorialPage";
 import PerfilPage from "./pages/wallet/PerfilPage";
+import MiQRPage from "./pages/wallet/MiQRPage";
 
 const queryClient = new QueryClient();
 
@@ -54,10 +56,11 @@ export default function App() {
               <Route path="membresias" element={<MembresiasPage />} />
               <Route path="config"    element={<ConfigPage />} />
               <Route path="qr"        element={<QRPage />} />
+              <Route path="staff"     element={<StaffPage />} />
             </Route>
 
             {/* QR — pantallas fullscreen sin sidebar */}
-            {/* Código universal de visita: pública, funciona con o sin sesión de cliente */}
+            {/* QR de afiliación: pública, el cliente lo usa una sola vez para unirse */}
             <Route path="/qr/visita/:empresaId" element={<QRVisitaPage />} />
             <Route
               path="/qr/cupon/:cuponId"
@@ -83,6 +86,16 @@ export default function App() {
               <Route path="historial" element={<HistorialPage />} />
               <Route path="perfil" element={<PerfilPage />} />
             </Route>
+
+            {/* Mi código — pantalla fullscreen sin sidebar, el cliente la muestra al staff */}
+            <Route
+              path="/wallet/empresa/:empresaId/mi-qr"
+              element={
+                <ProtectedRoute allowedRoles={["cliente"]}>
+                  <MiQRPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Super admin */}
             <Route

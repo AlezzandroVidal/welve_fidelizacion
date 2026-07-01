@@ -31,10 +31,11 @@ export interface ResultadoVisita {
   yaRegistradoHoy: boolean;
 }
 
-export interface RegistroQRResponse {
+export interface AfiliarResponse {
   accessToken: string;
   tokenType: string;
   clienteId: string;
+  codigoCliente: string;
   resultado: ResultadoVisita;
 }
 
@@ -77,11 +78,8 @@ export const qrApi = {
   infoEmpresa: (empresaId: string) =>
     api.get<EmpresaInfoQR>(`/qr/empresa/${empresaId}/info`),
 
-  registro: (empresaId: string, data: { nombre: string; email?: string; whatsapp?: string }) =>
-    api.post<RegistroQRResponse>(`/qr/empresa/${empresaId}/registro`, data),
-
-  visita: (empresaId: string) =>
-    api.post<ResultadoVisita>(`/qr/visita/${empresaId}`),
+  afiliar: (empresaId: string, data: { nombre: string; email?: string; whatsapp?: string }) =>
+    api.post<AfiliarResponse>(`/qr/empresa/${empresaId}/afiliar`, data),
 
   validarCupon: (cuponId: string, clienteId: string) =>
     api.post<ValidarCuponResponse>(`/qr/cupon/${cuponId}/validar`, { cliente_id: clienteId }),

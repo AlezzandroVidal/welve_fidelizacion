@@ -1,33 +1,17 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useEmpresaDetalle } from '../../hooks/useWallet';
-import { useVisitaQR } from '../../hooks/useQR';
 import { useAuth } from '../../context/AuthContext';
-import VisitaResultado from '../../components/qr/VisitaResultado';
 import QRDisplay from '../../components/admin/QRDisplay';
-import type { ResultadoVisita } from '../../api/qr';
-import { Clock, MapPin, Flame, Ticket, X, MapPinned, Video } from 'lucide-react';
+import { Clock, MapPin, Flame, Ticket, X, QrCode, Video } from 'lucide-react';
 
 export default function EmpresaDetallePage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data, isLoading } = useEmpresaDetalle(id || '');
   const [activeTab, setActiveTab] = useState<'todos' | 'exclusivos'>('todos');
   const [selectedCupon, setSelectedCupon] = useState<any | null>(null);
-  const visita = useVisitaQR();
-  const [resultadoVisita, setResultadoVisita] = useState<ResultadoVisita | null>(null);
-  const [errorVisita, setErrorVisita] = useState('');
-
-  async function handleRegistrarVisita() {
-    if (!id) return;
-    setErrorVisita('');
-    try {
-      const res = await visita.mutateAsync(id);
-      setResultadoVisita(res);
-    } catch {
-      setErrorVisita('No se pudo registrar tu visita. Intenta de nuevo.');
-    }
-  }
 
   if (isLoading || !data) {
     return <div className="p-6 text-center animate-pulse">Cargando empresa...</div>;
@@ -91,16 +75,14 @@ export default function EmpresaDetallePage() {
             {empresa.tiktok && <a href="#" className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-black hover:scale-110 transition-transform"><Video size={16} /></a>}
           </div>
 
-          {/* Registrar visita sin escanear QR — el cliente ya está en la app */}
+          {/* Las visitas y canjes los registra el staff del local — el cliente solo muestra su código */}
           <button
-            onClick={handleRegistrarVisita}
-            disabled={visita.isPending}
-            className="mb-6 flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-gray-900/20 transition-transform active:scale-95 disabled:opacity-60"
+            onClick={() => id && navigate(`/wallet/empresa/${id}/mi-qr`)}
+            className="mb-6 flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-gray-900/20 transition-transform active:scale-95"
           >
-            <MapPinned size={16} />
-            {visita.isPending ? 'Registrando...' : 'Estoy aquí — Registrar visita'}
+            <QrCode size={16} />
+            Mostrar mi código
           </button>
-          {errorVisita && <p className="mb-4 text-xs text-red-500">{errorVisita}</p>}
         </div>
 
         {/* Info basica */}
@@ -345,19 +327,6 @@ export default function EmpresaDetallePage() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Resultado de "Registrar visita" — mismo componente que usan las páginas de QR */}
-      {resultadoVisita && (
-        <div className="fixed inset-0 z-[100]">
-          <VisitaResultado resultado={resultadoVisita} empresaNombre={empresa.nombre} />
-          <button
-            onClick={() => setResultadoVisita(null)}
-            className="absolute top-6 right-6 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
-          >
-            <X size={18} />
-          </button>
         </div>
       )}
     </div>

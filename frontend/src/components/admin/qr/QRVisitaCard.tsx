@@ -7,9 +7,9 @@ interface Props {
 }
 
 /**
- * Código único de visita del negocio: mismo QR para clientes nuevos y para
- * clientes que ya tienen cuenta. Si el que escanea no está registrado en
- * Welve, se registra ahí mismo y esa primera visita queda contada.
+ * QR de afiliación — el cliente lo escanea UNA SOLA VEZ para unirse al
+ * programa (esa primera visita queda contada). Las visitas y canjes
+ * siguientes las registra el staff desde el panel "Registrar".
  */
 export default function QRVisitaCard({ empresaId, empresaNombre }: Props) {
   return (
@@ -19,11 +19,10 @@ export default function QRVisitaCard({ empresaId, empresaNombre }: Props) {
           <ScanLine size={20} className="text-welve-600" />
         </div>
         <div>
-          <h2 className="text-base font-bold text-gray-900">QR de visitas</h2>
+          <h2 className="text-base font-bold text-gray-900">QR de afiliación — solo primera visita</h2>
           <p className="mt-0.5 max-w-md text-xs text-gray-500">
-            Un único código para todos tus clientes. Si el cliente ya tiene cuenta en Welve,
-            solo se registra su visita; si es nuevo, se registra en el momento y su visita
-            queda contada de una vez.
+            El cliente escanea este QR UNA SOLA VEZ para registrarse en tu programa.
+            Las visitas siguientes las registra tu staff desde el panel.
           </p>
         </div>
       </div>

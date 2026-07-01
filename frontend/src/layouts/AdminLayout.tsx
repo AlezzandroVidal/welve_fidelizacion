@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import {
   LayoutDashboard, Ticket, CheckSquare, Users,
-  Target, Crown, Settings, Menu, User, QrCode,
+  Target, Crown, Settings, Menu, User, QrCode, ScanLine,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useEmpresaMe } from "../hooks/useEmpresa";
@@ -46,6 +46,7 @@ export default function AdminLayout() {
       label: "Principal",
       items: [
         { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
+        { to: "/admin/staff",     icon: ScanLine,        label: "Registrar" },
         { to: "/admin/cupones",   icon: Ticket,          label: "Cupones", badge: cuponesActivos },
         { to: "/admin/canjes",    icon: CheckSquare,     label: "Canjes" },
         { to: "/admin/clientes",  icon: Users,           label: "Clientes", badge: clientes?.length },
