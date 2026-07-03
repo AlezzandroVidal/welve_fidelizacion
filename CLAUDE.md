@@ -70,9 +70,10 @@ cd frontend && npm run dev
 # Build de producción frontend (tsc --noEmit implícito + vite build)
 cd frontend && npm run build
 
-# Linter frontend — ROTO actualmente: falta frontend/eslint.config.js
-# (el proyecto usa ESLint 9, que requiere flat config; no hay .eslintrc ni
-# eslint.config.js en el repo). Crear eslint.config.js antes de poder usarlo.
+# Linter frontend (flat config en frontend/eslint.config.js — reglas
+# react-hooks limitadas a rules-of-hooks/exhaustive-deps a propósito: la
+# v7 del plugin agrega reglas de React Compiler en "recommended" que no
+# aplican a este codebase)
 cd frontend && npm run lint
 
 # Celery worker (desarrollo local sin Docker)
