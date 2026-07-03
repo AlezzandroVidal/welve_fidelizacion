@@ -1,223 +1,169 @@
-# Welve — Plataforma SaaS de Fidelización
+# Welve — Plataforma SaaS B2B de Fidelización
 
-> Proyecto integrador académico (Modalidad A) · Stack: FastAPI · React · MongoDB · Redis · Docker · Codespaces
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)
+![React](https://img.shields.io/badge/React-18-blue)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
+![Railway](https://img.shields.io/badge/Deploy-Railway-purple)
+![Docker](https://img.shields.io/badge/Docker-Hub-blue)
 
-Welve es una plataforma B2B que permite a negocios físicos (restaurantes, cafeterías, salones de belleza, retail) configurar y gestionar programas de fidelización para sus clientes. Los clientes finales acceden **sin necesidad de app ni registro**, a través de un QR o magic link.
+## Descripción
 
----
+Welve es una plataforma SaaS B2B que digitaliza los programas de fidelización
+de negocios físicos — restaurantes, cafeterías, salones de belleza, tiendas
+de retail — reemplazando las tarjetas perforadas y stickers de papel por un
+sistema configurable de cupones, retos, rachas de visita y recompensas por
+historial de compra.
 
-## Arquitectura
+El modelo de negocio es una suscripción mensual B2B: la empresa paga por usar
+la plataforma (planes Starter/Growth/Pro), no una comisión por cada canje o
+venta. El costo de los descuentos que la empresa ofrece a sus clientes es
+100% suyo — Welve solo cobra la suscripción.
 
-```mermaid
-graph TD
-    subgraph Cliente Final
-        QR[QR / Magic Link]
-    end
+Los clientes finales acceden **sin instalar nada ni crear una cuenta con
+contraseña obligatoria**: escanean un QR en el local o reciben un magic link,
+y desde ahí ven su wallet de cupones, su progreso en retos activos y su
+historial, todo por navegador. El módulo de Caja/POS integrado permite que el
+mismo negocio registre sus ventas, descuente stock de inventario y aplique
+los cupones automáticamente en el mismo flujo de cobro.
 
-    subgraph Frontend
-        FE[React 18 + Vite\nnginx :80]
-    end
+## URLs de producción
 
-    subgraph Backend
-        API[FastAPI :8000]
-        WRK[Celery Worker]
-    end
-
-    subgraph Datos
-        MDB[(MongoDB :27017)]
-        RDS[(Redis :6379)]
-    end
-
-    subgraph Notificaciones
-        WA[WhatsApp Cloud API]
-        SG[SendGrid / Resend]
-    end
-
-    QR --> FE
-    FE -->|HTTP / REST| API
-    API --> MDB
-    API -->|Encola tarea| RDS
-    WRK -->|Consume| RDS
-    WRK --> WA
-    WRK --> SG
-```
-
----
+| Servicio | URL |
+|---|---|
+| Frontend | https://welve-frontend-production.up.railway.app |
+| Backend API | https://welve-backend-production.up.railway.app |
+| Docs (Swagger) | https://welve-backend-production.up.railway.app/docs |
+| Health check | https://welve-backend-production.up.railway.app/health |
 
 ## Stack tecnológico
 
-| Capa | Tecnología |
-|---|---|
-| Backend | Python 3.11, FastAPI 0.115, Uvicorn |
-| ODM / DB Driver | Beanie 1.27 + Motor 3.6 (async) |
-| Base de datos | MongoDB 7.0 |
-| Cola de tareas | Celery 5.4 + Redis 7.4 |
-| Frontend | React 18, Vite 6, TailwindCSS 3, React Query 5 |
-| Contenedores | Docker + Docker Compose |
-| Cloud Dev | GitHub Codespaces |
-| Testing | Pytest (backend), Vitest (frontend) |
+| Capa | Tecnología | Versión |
+|---|---|---|
+| Backend | Python + FastAPI | 3.11 / 0.115 |
+| ODM / driver Mongo | Beanie + Motor (async) | 1.27 / 3.6 |
+| Base de datos | MongoDB Atlas (cloud, no local) | — |
+| Cola de tareas | Celery + Redis | 5.4 / 7.4 |
+| Frontend | React + Vite + TypeScript | 18 / 6 |
+| Estilos | TailwindCSS | 3 |
+| Estado de servidor | React Query (TanStack) | 5 |
+| Formularios | React Hook Form + Zod | — |
+| Gráficos | Recharts | — |
+| Íconos | lucide-react | — |
+| Contenedores | Docker (multi-stage) | — |
+| Deploy | Railway (imágenes desde Docker Hub) | — |
+| Servidor estático frontend | Nginx | 1.27-alpine |
 
----
+## Cómo correr en desarrollo
 
-## Estructura de carpetas
+El flujo por defecto en GitHub Codespaces (o local) **no** usa Docker para
+todo — solo Redis corre en contenedor, el resto es nativo:
+
+```bash
+# 1. Clonar y configurar variables de entorno
+git clone https://github.com/AlezzandroVidal/welve_fidelizacion.git
+cd welve_fidelizacion
+cp .env.example .env   # completar MONGO_URI real (Atlas) y SECRET_KEY
+
+# 2. Levantar Redis (único servicio en Docker durante desarrollo)
+docker compose up redis -d
+
+# 3. Backend nativo
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+# API: http://localhost:8000 · Docs: http://localhost:8000/docs
+
+# 4. Frontend nativo (otra terminal)
+cd frontend
+npm install
+npm run dev
+# App: http://localhost:5173 (proxy a la API vía vite.config.ts)
+
+# 5. (Opcional) Poblar datos de ejemplo — idempotente, no duplica
+cd backend && python scripts/seed.py
+
+# 6. (Opcional) Worker de Celery — jobs periódicos (romper rachas, expirar
+# cupones, evaluar clientes VIP, notificar retos activos)
+cd backend && celery -A app.worker.celery_app worker -B --loglevel=info
+```
+
+> MongoDB **no corre en contenedor** — el `MONGO_URI` siempre apunta a un
+> cluster de Atlas, tanto en desarrollo como en producción. Ver `CLAUDE.md`
+> para el detalle completo de convenciones del proyecto.
+
+Para probar el build de producción completo (backend + frontend + worker
+dockerizados, aunque Mongo sigue siendo Atlas):
+
+```bash
+docker compose up --build
+```
+
+## Cómo hacer deploy
+
+El deploy a producción es a **Railway**, usando imágenes Docker ya construidas
+y publicadas en Docker Hub (`alezzzzandrov/welve-backend`,
+`alezzzzandrov/welve-frontend`) — no builds desde el repo conectado. La guía
+completa, paso a paso, con las variables de entorno exactas y las salvedades
+de Railway al desplegar por imagen en vez de por repo, está en
+**[DEPLOY.md](./DEPLOY.md)**.
+
+## Estructura del proyecto
 
 ```
 welve_fidelizacion/
-├── .devcontainer/        # GitHub Codespaces config
-├── .github/              # PR template
 ├── backend/
-│   ├── Dockerfile        # Multi-stage build
+│   ├── Dockerfile             # multi-stage: builder (deps) + production
 │   ├── requirements.txt
+│   ├── scripts/
+│   │   ├── seed.py            # datos de ejemplo, idempotente
+│   │   └── migrate_*.py       # migraciones one-off de índices/schema
 │   └── app/
-│       ├── main.py       # FastAPI app + lifespan
-│       ├── core/         # Config, seguridad (JWT)
-│       ├── db/           # Init Motor + Beanie
-│       ├── models/       # Documentos Beanie (colecciones Mongo)
-│       ├── schemas/      # Pydantic request/response
-│       ├── routers/      # Endpoints por dominio
-│       ├── services/     # Lógica de negocio
-│       └── worker/       # Celery app + tasks
+│       ├── main.py            # FastAPI app, lifespan, CORS, routers
+│       ├── core/               # config, JWT/seguridad, dependencias de auth
+│       ├── db/                 # init de Motor + Beanie
+│       ├── models/             # documentos Beanie (colecciones Mongo) + enums.py
+│       ├── schemas/            # Pydantic de entrada/salida por dominio
+│       ├── routers/            # endpoints HTTP, un archivo por dominio
+│       ├── services/           # lógica de negocio (único lugar que toca Beanie)
+│       └── worker/             # Celery app + tasks + jobs periódicos
 ├── frontend/
-│   ├── Dockerfile        # Vite build → nginx
+│   ├── Dockerfile              # multi-stage: build (Vite) + nginx
 │   ├── nginx.conf
 │   └── src/
-│       ├── api/          # Axios client base
-│       └── components/   # Componentes React
-├── infra/
-│   └── mongo-init/       # Script de inicialización de Mongo
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── CONTRIBUTING.md
+│       ├── api/                 # cliente Axios + funciones por dominio
+│       ├── hooks/                # hooks de React Query por dominio
+│       ├── context/              # AuthContext (decodifica JWT, roles)
+│       ├── layouts/              # AdminLayout, WalletLayout
+│       ├── pages/                 # auth/, admin/, wallet/, qr/, LandingPage
+│       └── components/            # componentes por dominio + ui/ genéricos
+├── docs/
+│   ├── REGLAS_NEGOCIO.md
+│   └── ARQUITECTURA.md
+├── docker-compose.yml            # stack completo (prueba local de prod)
+├── DEPLOY.md                     # guía de deploy en Railway
+├── DATABASE.MD                   # schema completo de Mongo, campo por campo
+├── PRODUCT.MD                    # reglas de negocio detalladas por módulo
+├── DESIGN.md                     # tokens visuales (paleta, tipografía, layout)
+├── CLAUDE.md                     # convenciones del proyecto para agentes de IA
+├── CONTRIBUTING.md               # GitHub Flow, commits, PRs
+└── .env.example
 ```
 
----
+## Documentación adicional
 
-## Modelo de datos en MongoDB
-
-Welve usa una **base de datos compartida con aislamiento por `empresa_id`** (multi-tenancy por campo). Cada documento que pertenece a un tenant lleva `empresa_id` indexado.
-
-| Colección | Propósito |
+| Documento | Contenido |
 |---|---|
-| `empresas` | Tenants / clientes de Welve. Cada empresa tiene su `slug`, plan y configuración. |
-| `clientes` | Usuarios finales de cada empresa. Sin contraseña; identificados por teléfono o email. Campo `empresa_id` obligatorio. |
-| `cupones` | Beneficios configurados por la empresa (descuentos, productos gratis). Con validez, tope de usos y puntos requeridos. |
-| `canjes` | Registro inmutable de cada canje de cupón por un cliente. |
-| `retos` | Desafíos de visitas/puntos que la empresa define para premiar la recurrencia. |
-| `membresias` | Relación cliente↔empresa: puntos acumulados, nivel, racha actual, retos completados. |
+| [DEPLOY.md](./DEPLOY.md) | Guía paso a paso de deploy en Railway |
+| [docs/REGLAS_NEGOCIO.md](./docs/REGLAS_NEGOCIO.md) | Actores, módulos, flujos y reglas de negocio |
+| [docs/ARQUITECTURA.md](./docs/ARQUITECTURA.md) | Diagramas de arquitectura, capas y schema de datos |
+| [DATABASE.MD](./DATABASE.MD) | Schema completo de MongoDB, colección por colección |
+| [PRODUCT.MD](./PRODUCT.MD) | Visión de producto y reglas de negocio funcionales |
+| [DESIGN.md](./DESIGN.md) | Sistema de diseño: paleta, tipografía, componentes |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Branching (GitHub Flow), commits, PRs |
 
-### Versionado de esquemas en MongoDB
+## Créditos
 
-A diferencia de bases de datos relacionales, MongoDB no tiene migraciones DDL. En Welve usamos la siguiente estrategia:
-
-1. **Validación a nivel de documento con Beanie/Pydantic**: todos los campos tienen tipos estrictos y valores por defecto. Si un campo nuevo es opcional, los documentos viejos son compatibles automáticamente.
-2. **Campo `schema_version` (a agregar si crece la complejidad)**: permite identificar la versión de esquema de cada documento y correr scripts de migración solo sobre los documentos desactualizados.
-3. **Scripts de migración en `/infra/migrations/`**: scripts Python con Motor que actualizan documentos en batch cuando un cambio de esquema es incompatible hacia atrás. Se corren manualmente (o con Celery) antes del deploy.
-
----
-
-## Correr localmente con Docker
-
-### Prerrequisitos
-- Docker Desktop (o Docker Engine + Compose plugin)
-
-### Pasos
-
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/<usuario>/welve_fidelizacion.git
-cd welve_fidelizacion
-
-# 2. Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tus valores si es necesario
-
-# 3. Levantar el stack completo
-docker compose up --build
-
-# La primera vez tarda más porque descarga imágenes y construye las capas.
-# Servicios disponibles:
-#   Frontend:  http://localhost:80
-#   API:       http://localhost:8000
-#   Docs API:  http://localhost:8000/docs
-#   MongoDB:   localhost:27017
-#   Redis:     localhost:6379
-```
-
-### Comandos útiles
-
-```bash
-# Solo los servicios de datos (útil para desarrollo local sin Docker del backend)
-docker compose up mongo redis -d
-
-# Ver logs de un servicio
-docker compose logs -f backend
-
-# Acceder a Mongo con mongosh
-docker compose exec mongo mongosh -u root -p changeme_root
-
-# Detener y eliminar volúmenes (reset completo)
-docker compose down -v
-```
-
----
-
-## Correr en GitHub Codespaces
-
-### Abrir con un clic
-
-1. En GitHub, haz clic en **Code → Codespaces → New codespace**.
-2. El Codespace se configura automáticamente via `.devcontainer/devcontainer.json`.
-3. Al terminar el setup, se ejecuta `docker compose up -d` automáticamente.
-4. Los puertos 8000 (API), 80 (frontend) y 27017 (Mongo) quedan expuestos.
-
-### Conectarse a MongoDB desde el Codespace
-
-**Con mongosh en la terminal:**
-```bash
-docker compose exec mongo mongosh \
-  -u welve_app -p changeme_app \
-  --authenticationDatabase welve \
-  welve
-```
-
-**Con la extensión MongoDB for VS Code:**
-1. Abrir la extensión (ícono de hoja en la barra lateral).
-2. Agregar conexión: `mongodb://welve_app:changeme_app@localhost:27017/welve?authSource=welve`
-3. Explorar colecciones visualmente desde el panel.
-
----
-
-## Correr los tests
-
-### Backend (Pytest)
-
-```bash
-cd backend
-pip install -r requirements.txt
-pytest -v
-```
-
-### Frontend (Vitest)
-
-```bash
-cd frontend
-npm install
-npm test
-```
-
----
-
-## Branching Strategy
-
-Usamos **GitHub Flow**. Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para la guía completa de:
-- Convención de nombres de ramas (`feature/`, `fix/`, `docs/`, `chore/`)
-- Convención de commits (Conventional Commits)
-- Flujo de Pull Request
-- Reglas de protección de `main`
-
----
-
-## Equipo
-
-Proyecto académico desarrollado en GitHub Codespaces.
+Proyecto integrador académico (Modalidad A), desarrollado por
+**Marco Alessandro Vidal Chumacero y Angelica Arias Alvarez** en GitHub Codespaces, 
+con asistencia deClaude Code para partes de implementación y automatizacion de despliegue.

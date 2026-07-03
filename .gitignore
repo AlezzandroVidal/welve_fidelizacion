@@ -54,6 +54,13 @@ data/db/
 .DS_Store
 Thumbs.db
 
+# Claude Code — config/estado local, no es parte del código del proyecto
+.claude/
+.mcp.json
+
+# Docs privados — nunca a git (credenciales reales de cuentas/servicios)
+docs/CUENTAS_Y_ACCESOS.md
+
 # OS
 .DS_Store
 .AppleDouble
