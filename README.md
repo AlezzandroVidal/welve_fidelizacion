@@ -1,18 +1,11 @@
 # Welve — Plataforma SaaS de Fidelización
 
-
-sadsa
 > Proyecto integrador académico (Modalidad A) · Stack: FastAPI · React · MongoDB · Redis · Docker · Codespaces
 
 Welve es una plataforma B2B que permite a negocios físicos (restaurantes, cafeterías, salones de belleza, retail) configurar y gestionar programas de fidelización para sus clientes. Los clientes finales acceden **sin necesidad de app ni registro**, a través de un QR o magic link.
 
 ---
-twggrgrgrddddsdsdssdsdsdssddfgsddsfsdfdsfdsdsfds
-hhhhhhhjhjdqewew32rr2ssasesds
-JJ
 
-
-eewjj
 ## Arquitectura
 
 ```mermaid
