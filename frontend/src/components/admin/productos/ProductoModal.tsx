@@ -135,7 +135,7 @@ export default function ProductoModal({ open, producto, onClose, onSuccess }: Pr
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6">
-            {tab === "info" && <TabInfoGeneral register={register} errors={errors} watch={watch} categoriasExistentes={categoriasExistentes} />}
+            {tab === "info" && <TabInfoGeneral register={register} errors={errors} watch={watch} setValue={setValue} categoriasExistentes={categoriasExistentes} />}
             {tab === "precios" && <TabPreciosCodigos register={register} errors={errors} watch={watch} setValue={setValue} skuAutoHint={!isEdit} />}
             {tab === "inventario" && mostrarInventario && (
               <TabInventario register={register} errors={errors} gestionarInventario={gestionarInventario} />

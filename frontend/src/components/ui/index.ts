@@ -13,8 +13,12 @@ export { Toaster }       from "./Toast";
 export { Table }         from "./Table";
 export { Skeleton, SkeletonRow } from "./Skeleton";
 export { TagsInput }     from "./TagsInput";
+export { default as ImageUpload } from "./ImageUpload";
+export { default as StoryModal } from "./StoryModal";
 
 export type { ButtonVariant, ButtonSize } from "./Button";
 export type { BadgeColor, BadgeSize }     from "./Badge";
 export type { SelectOption }             from "./Select";
 export type { InputVariant }             from "./Input";
+export type { ImageUploadShape }         from "./ImageUpload";
+export type { StoryScreen }              from "./StoryModal";

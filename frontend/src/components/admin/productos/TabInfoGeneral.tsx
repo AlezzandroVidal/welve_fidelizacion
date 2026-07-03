@@ -1,16 +1,17 @@
-import type { FieldErrors, UseFormRegister, UseFormWatch } from "react-hook-form";
+import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { Package, Sparkles } from "lucide-react";
-import { Input, TextareaField } from "../../ui";
+import { Input, TextareaField, ImageUpload } from "../../ui";
 import type { ProductoFormData } from "./schema";
 
 interface Props {
   register: UseFormRegister<ProductoFormData>;
   errors: FieldErrors<ProductoFormData>;
   watch: UseFormWatch<ProductoFormData>;
+  setValue: UseFormSetValue<ProductoFormData>;
   categoriasExistentes: string[];
 }
 
-export default function TabInfoGeneral({ register, errors, watch, categoriasExistentes }: Props) {
+export default function TabInfoGeneral({ register, errors, watch, setValue, categoriasExistentes }: Props) {
   const tipo = watch("tipo");
   const imagenUrl = watch("imagen_url");
 
@@ -60,12 +61,15 @@ export default function TabInfoGeneral({ register, errors, watch, categoriasExis
       <TextareaField {...register("descripcion")} label="Descripción" placeholder="Breve descripción del producto o servicio" rows={3} />
 
       <div>
-        <Input {...register("imagen_url")} label="URL de imagen" placeholder="https://..." />
-        {imagenUrl && (
-          <div className="mt-2 h-28 w-28 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
-            <img src={imagenUrl} alt="Preview" className="h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          </div>
-        )}
+        <p className="mb-2 text-xs font-semibold text-gray-500">Imagen</p>
+        <div className="w-40">
+          <ImageUpload
+            value={imagenUrl || null}
+            onChange={(v) => setValue("imagen_url", v, { shouldValidate: true })}
+            shape="square"
+            placeholder="Imagen del producto"
+          />
+        </div>
       </div>
     </div>
   );
