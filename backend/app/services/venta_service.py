@@ -3,15 +3,13 @@ from typing import Any, Optional
 
 from beanie import PydanticObjectId
 
-from app.models.canje import Canje
 from app.models.cliente import Cliente
 from app.models.cupon import Cupon
-from app.models.enums import AccesoVisibilidad, AplicaCupon, CanalCanje, EstadoVenta, MetodoPagoVenta, TipoCupon, TipoMovimiento
+from app.models.enums import AplicaCupon, CanalCanje, EstadoVenta, MetodoPagoVenta, TipoCupon, TipoMovimiento
 from app.models.producto import Producto
-from app.models.relacion import RelacionClienteEmpresa
 from app.models.venta import ItemVenta, Venta
 from app.schemas.venta import ItemCarritoInput
-from app.services import canje_service, cupon_service, cupon_validacion_service, producto_service, visita_service
+from app.services import canje_service, cupon_acceso_service, cupon_service, cupon_validacion_service, producto_service, visita_service
 
 IGV_TASA = 0.18
 
@@ -38,27 +36,25 @@ async def _validar_cupon_para_carrito(
     subtotal: float,
     productos_map: dict[str, Producto],
 ) -> tuple[bool, str]:
-    ok, motivo = cupon_validacion_service.es_canjeable(cupon, subtotal)
-    if not ok:
-        return False, motivo
-
     if cliente_id is None:
         return False, "Identifica al cliente para aplicar un cupón"
 
-    relacion = await RelacionClienteEmpresa.find_one(
-        RelacionClienteEmpresa.empresa_id == empresa_id,
-        RelacionClienteEmpresa.cliente_id == cliente_id,
-    )
-    if not relacion:
-        return False, "El cliente no está afiliado a esta empresa"
-    if cupon.visibilidad == AccesoVisibilidad.vip and relacion.segmento.value != "exclusivo":
-        return False, "Cupón exclusivo — el cliente no califica"
-    if cupon.limite_usos_por_cliente is not None:
-        usos = await Canje.find(
-            Canje.empresa_id == empresa_id, Canje.cliente_id == cliente_id, Canje.cupon_id == cupon.id,
-        ).count()
-        if usos >= cupon.limite_usos_por_cliente:
-            return False, "El cliente ya alcanzó el límite de usos de este cupón"
+    # Delega toda la elegibilidad general (vigencia, gate VIP, límite de uso,
+    # y el estado de desbloqueo para por_reto/por_requisito/privado) al mismo
+    # motor que usa el wallet del cliente — nunca exige afiliación previa
+    # para un cupón público (Parte 1), y antes no manejaba nada distinto de
+    # publico/vip: un cupón por_reto/por_requisito sin desbloquear pasaba
+    # sin rechazo si el staff tecleaba su código a mano.
+    acceso = await cupon_acceso_service.evaluar_acceso_cupon(cupon, cliente_id, empresa_id)
+    if not acceso.puede_canjear:
+        return False, acceso.mensaje or "Este cupón no está disponible para este cliente"
+
+    # es_canjeable(cupon, subtotal) además valida monto_minimo (la compra
+    # mínima POR CANJE) contra el subtotal real del carrito — evaluar_acceso_cupon
+    # no lo hace porque no conoce el carrito.
+    ok, motivo = cupon_validacion_service.es_canjeable(cupon, subtotal)
+    if not ok:
+        return False, motivo
 
     if cupon.aplica_a == AplicaCupon.productos_especificos:
         validos = {str(pid) for pid in cupon.productos_validos}

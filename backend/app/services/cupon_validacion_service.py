@@ -7,10 +7,8 @@ from typing import Optional
 
 from beanie import PydanticObjectId
 
-from app.models.canje import Canje
 from app.models.cupon import Cupon
-from app.models.enums import AccesoVisibilidad, EstadoCupon, SegmentoCliente
-from app.models.relacion import RelacionClienteEmpresa
+from app.models.enums import EstadoCupon
 from app.services import cupon_service
 
 
@@ -58,37 +56,19 @@ async def expirar_cupones_vencidos() -> int:
 async def listar_cupones_disponibles_cliente(
     empresa_id: PydanticObjectId, cliente_id: PydanticObjectId,
 ) -> list[Cupon]:
-    """Cupones que un cliente concreto puede canjear ahora mismo: vigentes,
-    respetando el gate VIP por segmento y límite de uso ya alcanzado por él.
-    Usado por el panel de staff antes de mostrarle qué puede canjear.
-
-    Solo cubre visibilidad=publico/vip — por_reto/por_requisito/privado
-    requieren evaluar progreso y estado de desbloqueo (CuponDesbloqueado),
-    eso lo resuelve cupon_acceso_service.evaluar_acceso_cupon, no esta
-    función legacy."""
-    relacion = await RelacionClienteEmpresa.find_one(
-        RelacionClienteEmpresa.empresa_id == empresa_id,
-        RelacionClienteEmpresa.cliente_id == cliente_id,
-    )
-    es_exclusivo_cliente = relacion is not None and relacion.segmento == SegmentoCliente.exclusivo
+    """Cupones que un cliente concreto puede canjear ahora mismo — vigentes,
+    respetando el gate VIP por segmento, el límite de uso ya alcanzado por
+    él, y el estado de desbloqueo para por_reto/por_requisito/privado.
+    Usado por el panel de staff y por Caja antes de mostrar qué puede
+    canjear. Delega toda la evaluación a cupon_acceso_service (import local
+    para evitar el ciclo: cupon_acceso_service ya importa este módulo para
+    es_canjeable)."""
+    from app.services import cupon_acceso_service
 
     cupones = await cupon_service.listar_cupones(empresa_id, filtro_estado=EstadoCupon.activo)
     disponibles = []
     for cupon in cupones:
-        if cupon.visibilidad not in (AccesoVisibilidad.publico, AccesoVisibilidad.vip):
-            continue
-        ok, _ = es_canjeable(cupon)
-        if not ok:
-            continue
-        if cupon.visibilidad == AccesoVisibilidad.vip and not es_exclusivo_cliente:
-            continue
-        if cupon.limite_usos_por_cliente is not None:
-            usos = await Canje.find(
-                Canje.empresa_id == empresa_id,
-                Canje.cliente_id == cliente_id,
-                Canje.cupon_id == cupon.id,
-            ).count()
-            if usos >= cupon.limite_usos_por_cliente:
-                continue
-        disponibles.append(cupon)
+        acceso = await cupon_acceso_service.evaluar_acceso_cupon(cupon, cliente_id, empresa_id)
+        if acceso.puede_canjear:
+            disponibles.append(cupon)
     return disponibles
