@@ -1,51 +1,25 @@
-
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { X } from "lucide-react";
-import type { Cupon, CreateCuponDto, UpdateCuponDto } from "../../../api/cupones";
+import { X, Info, Percent, Package, Eye, Calendar } from "lucide-react";
+import type {
+  AccesoVisibilidad, AplicaCupon, Cupon, CreateCuponDto, TipoCupon, TipoRequisito, UpdateCuponDto,
+} from "../../../api/cupones";
 import { useCreateCupon, useUpdateCupon } from "../../../hooks/useCupones";
-import { Input, SelectField, DateField, Checkbox } from "../../ui";
+import { Input } from "../../ui";
+import CuponModalContenido from "./CuponModalContenido";
+import SeccionProductosValidos from "./SeccionProductosValidos";
+import TabDescuento from "./TabDescuento";
+import TabVisibilidad from "./TabVisibilidad";
+import TabVigencia from "./TabVigencia";
+import { cuponFormSchema, TABS_CUPON, CAMPOS_POR_TAB, type CuponFormData, type TabIdCupon } from "./cuponFormSchema";
+import { buildCamposComunes, toIso } from "./buildCuponPayload";
 
-/* ── Schema ──────────────────────────────────────────────────────────────── */
-
-const schema = z.object({
-  nombre:                  z.string().min(3, "Mínimo 3 caracteres"),
-  tipo:                    z.string(),
-  valor:                   z.string().optional(),
-  monto_minimo:            z.string().optional(),
-  fecha_inicio:            z.string().min(1, "Requerido"),
-  fecha_expiracion:        z.string().min(1, "Requerido"),
-  limite_usos_total:       z.string().optional(),
-  limite_usos_por_cliente: z.string().optional(),
-  exclusivo:               z.boolean().optional(),
-}).superRefine((d, ctx) => {
-  if (d.tipo === "descuento_porcentual" || d.tipo === "descuento_fijo") {
-    if (!d.valor || !parseFloat(d.valor)) {
-      ctx.addIssue({ code: "custom", message: "Requerido para este tipo", path: ["valor"] });
-    }
-  }
-  if (d.tipo === "descuento_porcentual" && d.valor) {
-    const n = parseFloat(d.valor);
-    if (n < 1 || n > 100) ctx.addIssue({ code: "custom", message: "Entre 1 y 100", path: ["valor"] });
-  }
-  if (d.fecha_inicio && d.fecha_expiracion && d.fecha_expiracion <= d.fecha_inicio) {
-    ctx.addIssue({ code: "custom", message: "Debe ser posterior a la fecha inicio", path: ["fecha_expiracion"] });
-  }
-});
-
-type FormData = z.infer<typeof schema>;
-
-const TIPO_LABELS: Record<string, string> = {
-  descuento_porcentual: "Descuento porcentual (%)",
-  descuento_fijo:       "Descuento fijo (S/)",
-  producto_gratis:      "Producto gratis",
-  dos_por_uno:          "2×1",
+const TAB_ICONS: Record<TabIdCupon, React.ElementType> = {
+  basico: Info, descuento: Percent, productos: Package, visibilidad: Eye, vigencia: Calendar,
 };
 
-function toIso(date: string, eod = false) { return eod ? `${date}T23:59:59` : `${date}T00:00:00`; }
-
-/* ── Component ───────────────────────────────────────────────────────────── */
+function toDateStr(iso: string) { return iso.slice(0, 10); }
 
 interface Props {
   open:     boolean;
@@ -60,53 +34,81 @@ export default function CuponModal({ open, cupon, onClose, onSuccess }: Props) {
   const update  = useUpdateCupon();
   const pending = create.isPending || update.isPending;
 
-  function toDateStr(iso: string) { return iso.slice(0, 10); }
+  const [tab, setTab] = useState<TabIdCupon>("basico");
+  const [imagen, setImagen] = useState<string | null>(cupon?.imagenUrl ?? null);
+  const [tags, setTags] = useState<string[]>(cupon?.tags ?? []);
+  const [colorTema, setColorTema] = useState<string | null>(cupon?.colorTema ?? null);
+  const [aplicaA, setAplicaA] = useState<AplicaCupon>(cupon?.aplicaA ?? "todo");
+  const [productosValidos, setProductosValidos] = useState<string[]>(cupon?.productosValidos ?? []);
+  const [categoriasValidas, setCategoriasValidas] = useState<string[]>(cupon?.categoriasValidas ?? []);
+  const [productoGratisId, setProductoGratisId] = useState(cupon?.productoGratisId ?? "");
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CuponFormData>({
+    resolver: zodResolver(cuponFormSchema),
     defaultValues: cupon
       ? {
           nombre:                  cupon.nombre,
+          codigo:                  cupon.codigo ?? "",
           tipo:                    cupon.tipo,
           valor:                   cupon.valor?.toString() ?? "",
+          cantidad_paga:           cupon.cantidadPaga?.toString() ?? "",
+          cantidad_lleva:          cupon.cantidadLleva?.toString() ?? "",
           monto_minimo:            cupon.montoMinimo?.toString() ?? "",
           fecha_inicio:            toDateStr(cupon.fechaInicio),
           fecha_expiracion:        toDateStr(cupon.fechaExpiracion),
           limite_usos_total:       cupon.limiteUsosTotal?.toString() ?? "",
           limite_usos_por_cliente: cupon.limiteUsosPorCliente?.toString() ?? "1",
-          exclusivo:               cupon.exclusivo,
+          sin_limite:              cupon.limiteUsosTotal == null,
+          visibilidad:             cupon.visibilidad,
+          reto_id:                 cupon.retoId ?? "",
+          requisito_tipo:          cupon.requisito?.tipo ?? "",
+          requisito_valor:         cupon.requisito?.valor?.toString() ?? "",
+          requisito_periodo_dias:  cupon.requisito?.periodo_dias?.toString() ?? "",
+          notificar_al_desbloquear:cupon.notificarAlDesbloquear,
+          mensaje_notificacion:    cupon.mensajeNotificacion ?? "",
+          destacado:               cupon.destacado,
+          terminos_condiciones:    cupon.terminosCondiciones ?? "",
+          descripcion_larga:       cupon.descripcionLarga ?? "",
+          instrucciones_canje:     cupon.instruccionesCanje ?? "",
+          monto_minimo_carrito:    cupon.montoMinimoCarrito?.toString() ?? "",
         }
-      : { limite_usos_por_cliente: "1", exclusivo: false },
+      : {
+          limite_usos_por_cliente: "1", destacado: false, visibilidad: "publico", tipo: "",
+          notificar_al_desbloquear: true,
+        },
   });
 
-  const tipo       = watch("tipo");
-  const needsValor = tipo === "descuento_porcentual" || tipo === "descuento_fijo";
+  const tipo               = watch("tipo") as TipoCupon;
+  const visibilidad        = watch("visibilidad") as AccesoVisibilidad;
+  const requisitoTipo      = watch("requisito_tipo") as TipoRequisito | "";
+  const sinLimite          = watch("sin_limite");
+  const descripcionLargaValue = watch("descripcion_larga") ?? "";
 
   if (!open) return null;
 
-  async function onSubmit(d: FormData) {
+  function tabTieneError(id: TabIdCupon) {
+    return CAMPOS_POR_TAB[id].some((campo) => campo in errors);
+  }
+
+  async function onSubmit(d: CuponFormData) {
+    const camposComunes = buildCamposComunes(d, {
+      imagen, tags, colorTema, aplicaA, productosValidos, categoriasValidas, productoGratisId,
+    });
+
     if (isEdit && cupon) {
-      const dto: UpdateCuponDto = {
-        nombre:                  d.nombre,
-        monto_minimo:            d.monto_minimo ? parseFloat(d.monto_minimo) : null,
-        fecha_expiracion:        toIso(d.fecha_expiracion, true),
-        limite_usos_total:       d.limite_usos_total ? parseInt(d.limite_usos_total) : null,
-        limite_usos_por_cliente: d.limite_usos_por_cliente ? parseInt(d.limite_usos_por_cliente) : 1,
-        exclusivo:               d.exclusivo ?? false,
-      };
+      const dto: UpdateCuponDto = { nombre: d.nombre, codigo: d.codigo?.trim() || null, ...camposComunes };
       await update.mutateAsync({ id: cupon.id, data: dto });
       onSuccess("Cupón actualizado");
     } else {
       const dto: CreateCuponDto = {
-        nombre:                  d.nombre,
-        tipo:                    d.tipo as CreateCuponDto["tipo"],
-        valor:                   needsValor && d.valor ? parseFloat(d.valor) : null,
-        monto_minimo:            d.monto_minimo ? parseFloat(d.monto_minimo) : null,
-        fecha_inicio:            toIso(d.fecha_inicio),
-        fecha_expiracion:        toIso(d.fecha_expiracion, true),
-        limite_usos_total:       d.limite_usos_total ? parseInt(d.limite_usos_total) : null,
-        limite_usos_por_cliente: d.limite_usos_por_cliente ? parseInt(d.limite_usos_por_cliente) : 1,
-        exclusivo:               d.exclusivo ?? false,
+        nombre: d.nombre,
+        codigo: d.codigo?.trim() || null,
+        tipo: tipo,
+        valor: (tipo === "porcentual" || tipo === "monto_fijo") && d.valor ? parseFloat(d.valor) : null,
+        cantidad_paga:  tipo === "n_por_m" && d.cantidad_paga  ? parseInt(d.cantidad_paga)  : null,
+        cantidad_lleva: tipo === "n_por_m" && d.cantidad_lleva ? parseInt(d.cantidad_lleva) : null,
+        fecha_inicio: toIso(d.fecha_inicio),
+        ...camposComunes,
       };
       await create.mutateAsync(dto);
       onSuccess("Cupón creado");
@@ -119,116 +121,86 @@ export default function CuponModal({ open, cupon, onClose, onSuccess }: Props) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
       <div
         className="relative z-10 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl
-          animate-fade-up sm:animate-scale-in"
-        style={{ maxHeight: "92dvh", overflowY: "auto" }}
+          animate-fade-up sm:animate-scale-in flex flex-col"
+        style={{ maxHeight: "92dvh" }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-          <h2 className="text-base font-bold text-gray-900">
-            {isEdit ? "Editar cupón" : "Nuevo cupón"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:scale-95"
-          >
+          <h2 className="text-base font-bold text-gray-900">{isEdit ? "Editar cupón" : "Nuevo cupón"}</h2>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:scale-95">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
-          <Input
-            {...register("nombre")}
-            label="Nombre"
-            placeholder="Ej. 15% en tu próxima compra"
-            error={errors.nombre?.message}
-          />
+        <div className="flex gap-1 overflow-x-auto border-b border-gray-100 px-3 pt-2">
+          {TABS_CUPON.map((t) => {
+            const Icon = TAB_ICONS[t.id];
+            return (
+              <button
+                key={t.id} type="button" onClick={() => setTab(t.id)}
+                className={`relative flex shrink-0 items-center gap-1.5 rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                  tab === t.id ? "bg-welve-50 text-welve-700" : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                <Icon size={14} /> {t.label}
+                {tabTieneError(t.id) && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />}
+              </button>
+            );
+          })}
+        </div>
 
-          <SelectField
-            {...register("tipo")}
-            label="Tipo de cupón"
-            error={errors.tipo?.message}
-            disabled={isEdit}
-          >
-            <option value="">Seleccionar...</option>
-            {Object.entries(TIPO_LABELS).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
-            ))}
-          </SelectField>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            {tab === "basico" && (
+              <>
+                <Input {...register("nombre")} label="Nombre" placeholder="Ej. 15% en tu próxima compra" error={errors.nombre?.message} />
+                <Input {...register("codigo")} label="Código para la Caja" placeholder="Se autogenera (ej. CUP-4F2A)"
+                  hint="El staff lo escanea o lo escribe en la Caja para aplicar este cupón" error={errors.codigo?.message} />
+                <CuponModalContenido
+                  register={register} errors={errors} descripcionLargaValue={descripcionLargaValue}
+                  imagen={imagen} onImagenChange={setImagen}
+                  tags={tags} onTagsChange={setTags}
+                  colorTema={colorTema} onColorTemaChange={setColorTema}
+                />
+              </>
+            )}
 
-          {needsValor && (
-            <Input
-              {...register("valor")}
-              type="number"
-              step="0.01"
-              min="0"
-              readOnly={isEdit}
-              label={tipo === "descuento_porcentual" ? "Porcentaje (%)" : "Monto (S/)"}
-              placeholder={tipo === "descuento_porcentual" ? "Ej. 15" : "Ej. 10"}
-              error={errors.valor?.message}
-            />
-          )}
+            {tab === "descuento" && (
+              <TabDescuento
+                register={register} errors={errors} tipo={tipo}
+                onTipoChange={(t) => setValue("tipo", t)}
+                productoGratisId={productoGratisId} onProductoGratisChange={setProductoGratisId}
+                disabled={isEdit}
+              />
+            )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <DateField
-              {...register("fecha_inicio")}
-              label="Fecha inicio"
-              error={errors.fecha_inicio?.message}
-              disabled={isEdit}
-            />
-            <DateField
-              {...register("fecha_expiracion")}
-              label="Fecha expiración"
-              error={errors.fecha_expiracion?.message}
-            />
+            {tab === "productos" && (
+              <SeccionProductosValidos
+                register={register} errors={errors} aplicaA={aplicaA} onAplicaAChange={setAplicaA}
+                productosValidos={productosValidos} onProductosValidosChange={setProductosValidos}
+                categoriasValidas={categoriasValidas} onCategoriasValidasChange={setCategoriasValidas}
+              />
+            )}
+
+            {tab === "visibilidad" && (
+              <TabVisibilidad
+                register={register} errors={errors} visibilidad={visibilidad}
+                onVisibilidadChange={(v) => setValue("visibilidad", v)}
+                requisitoTipo={requisitoTipo}
+              />
+            )}
+
+            {tab === "vigencia" && (
+              <TabVigencia register={register} errors={errors} sinLimite={sinLimite} disabledFechaInicio={isEdit} />
+            )}
           </div>
 
-          <Input
-            {...register("monto_minimo")}
-            type="number"
-            step="0.01"
-            min="0"
-            label="Monto mínimo de compra"
-            placeholder="Sin mínimo (opcional)"
-            error={errors.monto_minimo?.message}
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              {...register("limite_usos_total")}
-              type="number"
-              min="1"
-              label="Límite usos totales"
-              placeholder="Sin límite"
-              error={errors.limite_usos_total?.message}
-            />
-            <Input
-              {...register("limite_usos_por_cliente")}
-              type="number"
-              min="1"
-              label="Límite por cliente"
-              error={errors.limite_usos_por_cliente?.message}
-            />
-          </div>
-
-          <Checkbox
-            {...register("exclusivo")}
-            label="Solo clientes VIP (exclusivo)"
-            description="Visible únicamente para clientes en segmento exclusivo"
-          />
-
-          <div className="flex gap-4 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 active:scale-[0.97]"
-            >
+          <div className="flex gap-4 border-t border-gray-100 p-6 pt-4">
+            <button type="button" onClick={onClose}
+              className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 active:scale-[0.97]">
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className="flex-1 rounded-xl bg-welve-500 py-3 text-sm font-semibold text-white transition-all hover:bg-welve-600 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
-            >
+            <button type="submit" disabled={pending}
+              className="flex-1 rounded-xl bg-welve-500 py-3 text-sm font-semibold text-white transition-all hover:bg-welve-600 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed">
               {pending ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear cupón"}
             </button>
           </div>

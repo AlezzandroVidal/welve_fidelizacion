@@ -65,6 +65,10 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(4px)" },
           to:   { opacity: "1", transform: "translateY(0)" },
         },
+        confetti: {
+          "0%":   { transform: "translateY(-10px) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translateY(120px) rotate(360deg)", opacity: "0" },
+        },
       },
       animation: {
         "fade-up":        "fade-up 220ms cubic-bezier(0.23,1,0.32,1) both",
@@ -74,6 +78,7 @@ const config: Config = {
         "slide-in-right": "slide-in-right 280ms cubic-bezier(0.32,0.72,0,1) both",
         "shimmer":        "shimmer 1.8s ease-in-out infinite",
         "count-up":       "count-up 400ms cubic-bezier(0.23,1,0.32,1) both",
+        "confetti":       "confetti 900ms ease-in forwards",
       },
     },
   },

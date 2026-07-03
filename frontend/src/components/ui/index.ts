@@ -12,6 +12,7 @@ export { Modal }         from "./Modal";
 export { Toaster }       from "./Toast";
 export { Table }         from "./Table";
 export { Skeleton, SkeletonRow } from "./Skeleton";
+export { TagsInput }     from "./TagsInput";
 
 export type { ButtonVariant, ButtonSize } from "./Button";
 export type { BadgeColor, BadgeSize }     from "./Badge";

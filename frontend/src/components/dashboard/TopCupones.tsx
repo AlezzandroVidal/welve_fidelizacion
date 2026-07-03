@@ -1,17 +1,23 @@
 import type { TopCupon } from "../../api/metricas";
 
 const TIPO_LABEL: Record<string, string> = {
-  descuento_porcentual: "%",
-  descuento_fijo:       "S/",
-  producto_gratis:      "Free",
-  dos_por_uno:          "2×1",
+  porcentual:      "%",
+  monto_fijo:      "S/",
+  producto_gratis: "Free",
+  dos_por_uno:     "2×1",
+  n_por_m:         "NxM",
+  envio_gratis:    "Envío",
+  personalizado:   "Custom",
 };
 
 const TIPO_COLOR: Record<string, string> = {
-  descuento_porcentual: "bg-blue-100 text-blue-700",
-  descuento_fijo:       "bg-green-100 text-green-700",
-  producto_gratis:      "bg-welve-100 text-welve-700",
-  dos_por_uno:          "bg-orange-100 text-orange-700",
+  porcentual:      "bg-blue-100 text-blue-700",
+  monto_fijo:      "bg-green-100 text-green-700",
+  producto_gratis: "bg-welve-100 text-welve-700",
+  dos_por_uno:     "bg-orange-100 text-orange-700",
+  n_por_m:         "bg-orange-100 text-orange-700",
+  envio_gratis:    "bg-purple-100 text-purple-700",
+  personalizado:   "bg-gray-100 text-gray-700",
 };
 
 function Skeleton() {

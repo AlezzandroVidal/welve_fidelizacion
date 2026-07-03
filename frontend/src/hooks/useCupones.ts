@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreateCuponDto, EstadoCupon, UpdateCuponDto, cuponesApi } from "../api/cupones";
+import type { ItemCarritoInput } from "../api/caja";
 
 const K = {
   list:   (estado?: EstadoCupon) => ["cupones", "list", estado ?? "all"] as const,
@@ -19,6 +20,14 @@ export function useCupon(id: string | null) {
     queryKey: K.detail(id ?? ""),
     queryFn:  () => cuponesApi.get(id!).then((r) => r.data),
     enabled:  !!id,
+  });
+}
+
+export function useCuponesValidosParaCarrito(items: ItemCarritoInput[], clienteId: string | null) {
+  return useQuery({
+    queryKey: ["cupones", "validos-carrito", clienteId, items],
+    queryFn:  () => cuponesApi.validosParaCarrito(items, clienteId!).then((r) => r.data),
+    enabled:  !!clienteId && items.length > 0,
   });
 }
 

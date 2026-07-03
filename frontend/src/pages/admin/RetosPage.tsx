@@ -4,7 +4,6 @@ import { useRetos, useCancelarReto, useReactivarReto } from "../../hooks/useReto
 import { useToast } from "../../hooks/useToast";
 import type { Reto } from "../../api/retos";
 import RetoModal from "../../components/admin/retos/RetoModal";
-import EditarRetoModal from "../../components/admin/retos/EditarRetoModal";
 import { Table, Badge, Sheet, Toaster } from "../../components/ui";
 
 /* ── Types & Helpers ─────────────────────────────────────────────────────── */
@@ -298,21 +297,14 @@ export default function RetosPage() {
       </Table.Root>
 
       <RetoModal
-        key={modalOpen ? "reto-open" : "reto-closed"}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        key={editando ? `reto-edit-${editando.id}` : modalOpen ? "reto-open" : "reto-closed"}
+        open={modalOpen || !!editando}
+        reto={editando}
+        onClose={() => { setModalOpen(false); setEditando(null); }}
         onSuccess={toast.success}
         onError={toast.error}
       />
       <RetoDetalle reto={detalle} onClose={() => setDetalle(null)} />
-      {editando && (
-        <EditarRetoModal
-          reto={editando}
-          onClose={() => setEditando(null)}
-          onSuccess={toast.success}
-          onError={toast.error}
-        />
-      )}
       <Toaster toasts={toast.toasts} onDismiss={toast.dismiss} />
     </main>
   );
