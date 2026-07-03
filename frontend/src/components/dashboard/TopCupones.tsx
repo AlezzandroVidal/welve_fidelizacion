@@ -20,59 +20,47 @@ const TIPO_COLOR: Record<string, string> = {
   personalizado:   "bg-gray-100 text-gray-700",
 };
 
-function Skeleton() {
-  return (
-    <div className="rounded-2xl bg-white p-5 shadow-card space-y-4">
-      <div className="h-4 w-40 rounded bg-gray-100 animate-pulse" />
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="space-y-1.5">
-          <div className="h-3 w-full rounded bg-gray-100 animate-pulse" />
-          <div className="h-2 w-full rounded-full bg-gray-100 animate-pulse" />
-        </div>
-      ))}
-    </div>
-  );
-}
+const POSICION_COLOR = ["text-amber-500", "text-gray-400", "text-orange-700"];
 
 interface Props {
   data: TopCupon[] | undefined;
-  isLoading: boolean;
+  onSelect?: (cuponId: string) => void;
 }
 
-export default function TopCupones({ data, isLoading }: Props) {
-  if (isLoading) return <Skeleton />;
+/** Bare — vive dentro de Widget.tsx (TopCuponesWidget). Solo se usa ahí. */
+export default function TopCupones({ data, onSelect }: Props) {
+  if (!data?.length) {
+    return <p className="text-sm text-gray-400 text-center py-8">Sin datos aún</p>;
+  }
 
-  const max = Math.max(...(data ?? []).map((c) => c.usos_actuales), 1);
+  const max = Math.max(...data.map((c) => c.usos_actuales), 1);
 
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-card h-full">
-      <h2 className="text-sm font-semibold text-gray-700 mb-4">Top cupones más canjeados</h2>
-
-      {!data?.length ? (
-        <p className="text-sm text-gray-400 text-center py-8">Sin datos aún</p>
-      ) : (
-        <div className="space-y-4">
-          {data.map((c) => (
-            <div key={c.cupon_id}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="truncate text-sm font-medium text-gray-800">{c.nombre}</span>
-                  <span className={`flex-shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${TIPO_COLOR[c.tipo] ?? "bg-gray-100 text-gray-600"}`}>
-                    {TIPO_LABEL[c.tipo] ?? c.tipo}
-                  </span>
-                </div>
-                <span className="ml-2 flex-shrink-0 text-sm font-semibold text-gray-900 tabular-nums">{c.usos_actuales}</span>
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-welve-100 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-welve-500 transition-all duration-500 ease-out"
-                  style={{ width: `${(c.usos_actuales / max) * 100}%` }}
-                />
-              </div>
+    <div className="space-y-4">
+      {data.map((c, i) => (
+        <button
+          key={c.cupon_id}
+          onClick={() => onSelect?.(c.cupon_id)}
+          className="block w-full text-left transition-opacity hover:opacity-80"
+        >
+          <div className="flex items-center justify-between mb-1.5 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`w-4 flex-shrink-0 text-xs font-black ${POSICION_COLOR[i] ?? "text-gray-300"}`}>{i + 1}</span>
+              <span className="truncate text-sm font-medium text-gray-800">{c.nombre}</span>
+              <span className={`flex-shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${TIPO_COLOR[c.tipo] ?? "bg-gray-100 text-gray-600"}`}>
+                {TIPO_LABEL[c.tipo] ?? c.tipo}
+              </span>
             </div>
-          ))}
-        </div>
-      )}
+            <span className="ml-2 flex-shrink-0 text-sm font-semibold text-gray-900 tabular-nums">{c.usos_actuales}</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-welve-100 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-welve-500 transition-all duration-500 ease-out"
+              style={{ width: `${(c.usos_actuales / max) * 100}%` }}
+            />
+          </div>
+        </button>
+      ))}
     </div>
   );
 }

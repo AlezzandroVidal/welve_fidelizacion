@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Ticket, Plus, MoreVertical, Star, Sparkles, LayoutGrid, LayoutList } from "lucide-react";
 import type { Cupon, EstadoCupon } from "../../api/cupones";
 import { useCupones, useDeleteCupon, usePausarCupon, useActivarCupon } from "../../hooks/useCupones";
@@ -47,7 +48,8 @@ function ActionMenu({ cupon, onView, onEdit, onDelete }: {
             { label: cupon.estado === "activo" ? "Pausar" : "Activar",
               action: async () => {
                 setOpen(false);
-                cupon.estado === "activo" ? await pausar.mutateAsync(cupon.id) : await activar.mutateAsync(cupon.id);
+                if (cupon.estado === "activo") await pausar.mutateAsync(cupon.id);
+                else await activar.mutateAsync(cupon.id);
               },
             },
             { label: "Eliminar", disabled: cupon.usosActuales > 0, action: () => { onDelete(); setOpen(false); }, danger: true },
@@ -167,6 +169,18 @@ export default function CuponesPage() {
   const toast                     = useToast();
   const deleteMut                 = useDeleteCupon();
   const { data: all = [], isLoading } = useCupones();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link desde TopCuponesWidget del dashboard (?cupon=<id>): abre el
+  // detalle directo apenas cargan los cupones, sin dejar el param pegado en la URL.
+  useEffect(() => {
+    const cuponId = searchParams.get("cupon");
+    if (!cuponId || !all.length) return;
+    const match = all.find((c) => c.id === cuponId);
+    if (match) setDetalle(match);
+    setSearchParams((prev) => { prev.delete("cupon"); return prev; }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all.length]);
 
   function switchView(v: View) {
     setView(v);
