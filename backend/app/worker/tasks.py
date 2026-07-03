@@ -40,7 +40,7 @@ def romper_rachas() -> int:
 @celery_app.task(name="jobs.expirar_cupones")
 def expirar_cupones() -> int:
     """Diario: pasa a `expirado` los cupones vencidos (PRODUCT.MD 6.1)."""
-    from app.services.cupon_service import expirar_cupones_vencidos
+    from app.services.cupon_validacion_service import expirar_cupones_vencidos
     return _run(_con_db(expirar_cupones_vencidos))
 
 

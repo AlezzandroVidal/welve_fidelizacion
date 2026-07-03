@@ -11,10 +11,10 @@ from beanie import PydanticObjectId
 from app.models.canje import Canje
 from app.models.cupon import Cupon
 from app.models.empresa import Empresa
-from app.models.enums import CanalCanje, TipoCondicionReto
+from app.models.enums import CanalCanje
 from app.models.relacion import RelacionClienteEmpresa
 from app.models.reto import Reto
-from app.services import canje_service
+from app.services import canje_service, progreso_service
 
 
 async def evaluar_recompensas_automaticas(
@@ -54,17 +54,14 @@ async def evaluar_recompensas_automaticas(
 async def evaluar_retos(
     empresa: Empresa, cliente_id: PydanticObjectId, relacion: RelacionClienteEmpresa
 ) -> list[dict]:
-    """Evalúa retos de num_visitas y de monto_acumulado (antes solo evaluaba
-    num_visitas — los retos por monto nunca se completaban)."""
+    """Evalúa retos de los 6 TipoReto (num_visitas, visitas_en_periodo,
+    monto_acumulado, monto_en_periodo, productos_comprados, puntos_acumulados)
+    — el cálculo de progreso por tipo vive en progreso_service, compartido con
+    cupon_acceso_service (cupones visibilidad=por_reto usan el mismo Reto)."""
     now = datetime.now(timezone.utc)
     candidatos = await Reto.find(
         Reto.empresa_id == empresa.id, Reto.cancelado == False,  # noqa: E712
     ).to_list()
-
-    progreso_por_tipo = {
-        TipoCondicionReto.num_visitas: relacion.visitas_totales,
-        TipoCondicionReto.monto_acumulado: relacion.monto_acumulado,
-    }
 
     completados = []
     for reto in candidatos:
@@ -75,7 +72,7 @@ async def evaluar_retos(
             fecha_fin = fecha_fin.replace(tzinfo=timezone.utc)
         if not (fecha_inicio <= now <= fecha_fin):
             continue
-        progreso = progreso_por_tipo[reto.condicion_tipo]
+        progreso = await progreso_service.calcular_progreso_reto(reto, relacion, empresa.id, cliente_id)
         if reto.recompensa_cupon_id is None or progreso < reto.condicion_valor:
             continue
 

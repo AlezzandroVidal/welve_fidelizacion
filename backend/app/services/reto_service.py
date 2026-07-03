@@ -9,9 +9,11 @@ from app.schemas.reto import RetoCreate, RetoUpdate
 
 
 async def crear_reto(empresa_id: PydanticObjectId, data: RetoCreate) -> Reto:
-    kwargs = data.model_dump(exclude={"recompensa_cupon_id"})
+    kwargs = data.model_dump(exclude={"recompensa_cupon_id", "producto_objetivo_id"})
     if data.recompensa_cupon_id:
         kwargs["recompensa_cupon_id"] = PydanticObjectId(data.recompensa_cupon_id)
+    if data.producto_objetivo_id:
+        kwargs["producto_objetivo_id"] = PydanticObjectId(data.producto_objetivo_id)
     reto = Reto(empresa_id=empresa_id, **kwargs)
     await reto.insert()
     return reto
@@ -32,10 +34,14 @@ async def actualizar_reto(empresa_id: PydanticObjectId, reto_id: PydanticObjectI
     reto = await obtener_reto(empresa_id, reto_id)
     if not reto:
         return None
-    update_data = data.model_dump(exclude={"recompensa_cupon_id"}, exclude_unset=True)
+    update_data = data.model_dump(exclude={"recompensa_cupon_id", "producto_objetivo_id"}, exclude_unset=True)
     if "recompensa_cupon_id" in data.model_fields_set:
         update_data["recompensa_cupon_id"] = (
             PydanticObjectId(data.recompensa_cupon_id) if data.recompensa_cupon_id else None
+        )
+    if "producto_objetivo_id" in data.model_fields_set:
+        update_data["producto_objetivo_id"] = (
+            PydanticObjectId(data.producto_objetivo_id) if data.producto_objetivo_id else None
         )
     if update_data:
         await reto.set(update_data)
