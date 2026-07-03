@@ -6,7 +6,7 @@ from beanie import PydanticObjectId
 from app.core.config import settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.services import magic_link_service
-from app.services.cliente_service import obtener_o_crear_cliente, obtener_o_crear_relacion
+from app.services.cliente_service import obtener_o_crear_cliente
 
 router = APIRouter(prefix="/auth/cliente", tags=["auth-cliente"])
 
@@ -81,7 +81,12 @@ async def verificar_magic_link(token: str):
         email=payload.get("email"),
         whatsapp=payload.get("whatsapp"),
     )
-    relacion = await obtener_o_crear_relacion(empresa_id, cliente.id)  # noqa: F841
+    # No crea RelacionClienteEmpresa acá — la afiliación es un efecto
+    # secundario del primer canje/visita (ver visita_service.registrar_visita
+    # / canje_service.crear_canje), no un prerequisito de iniciar sesión.
+    # Ningún endpoint depende de que exista antes de esto: get_current_cliente
+    # (que sí la exige) no está montado en ninguna ruta activa hoy; todo el
+    # wallet usa get_global_cliente, que no la necesita.
 
     jwt = create_access_token(
         subject=str(cliente.id),
