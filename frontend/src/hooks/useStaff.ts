@@ -10,6 +10,15 @@ export function useClientePorCodigo(codigoCliente: string | null) {
   });
 }
 
+export function useClientePorQR(clienteId: string | null) {
+  return useQuery({
+    queryKey: ["staff", "cliente-qr", clienteId ?? ""],
+    queryFn: () => staffApi.clientePorQR(clienteId!).then((r) => r.data),
+    enabled: !!clienteId,
+    retry: false,
+  });
+}
+
 export function useVisitaPorCodigo() {
   return useMutation({
     mutationFn: ({ codigoCliente, monto }: { codigoCliente: string; monto?: number }) =>

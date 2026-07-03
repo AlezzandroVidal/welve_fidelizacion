@@ -77,6 +77,32 @@ async def cliente_por_codigo(codigo_cliente: str, empresa: Empresa = Depends(get
     )
 
 
+@router.get("/cliente/por-qr/{cliente_id}", response_model=ClienteStaffResponse)
+async def cliente_por_qr(cliente_id: str, empresa: Empresa = Depends(get_current_empresa_admin)):
+    """Igual que GET /cliente/{codigo_cliente} pero identificando por
+    cliente_id — el QR personal del cliente (/wallet/mi-qr) codifica
+    welve://cliente/{cliente_id}, no su codigo_cliente WLV-XXXX."""
+    cid = _parse_id(cliente_id, "cliente_id")
+    data = await staff_service.info_cliente_por_id(empresa.id, cid)
+    if not data:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    return ClienteStaffResponse(
+        cliente=ClienteInfoStaff(
+            id=str(data["cliente"].id),
+            nombre=data["cliente"].nombre, email=data["cliente"].email, whatsapp=data["cliente"].whatsapp,
+            codigoCliente=data["cliente"].codigo_cliente,
+        ),
+        relacion=RelacionInfoStaff(
+            visitasTotales=data["relacion"].visitas_totales,
+            rachaActual=data["relacion"].racha_actual,
+            puntos=data["relacion"].puntos,
+            segmento=data["relacion"].segmento.value,
+        ),
+        cuponesDisponibles=[cupon_service.cupon_to_response(c) for c in data["cupones"]],
+        canjesRecientes=[_canje_to_response(c) for c in data["canjes"]],
+    )
+
+
 @router.post("/visita/por-codigo", response_model=VisitaStaffResponse)
 async def visita_por_codigo(data: VisitaPorCodigoRequest, empresa: Empresa = Depends(get_current_empresa_admin)):
     resultado, error = await staff_service.registrar_visita_por_codigo(empresa.id, data.codigo_cliente, data.monto)

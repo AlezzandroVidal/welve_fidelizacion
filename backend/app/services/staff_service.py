@@ -45,6 +45,20 @@ async def info_cliente(empresa_id: PydanticObjectId, codigo_cliente: str) -> dic
     return {"cliente": cliente, "relacion": relacion, "cupones": cupones, "canjes": canjes}
 
 
+async def info_cliente_por_id(empresa_id: PydanticObjectId, cliente_id: PydanticObjectId) -> dict | None:
+    """Igual que info_cliente, pero identificando al cliente por su
+    cliente_id (el QR personal /wallet/mi-qr codifica welve://cliente/{id},
+    no el codigo_cliente WLV-XXXX) — usado cuando se escanea el QR real en
+    vez de teclear el código a mano."""
+    par = await _cliente_y_relacion_por_id(empresa_id, cliente_id)
+    if not par:
+        return None
+    cliente, relacion = par
+    cupones = await cupon_validacion_service.listar_cupones_disponibles_cliente(empresa_id, cliente.id)
+    canjes = (await canje_service.listar_canjes_cliente(empresa_id, cliente.id))[:3]
+    return {"cliente": cliente, "relacion": relacion, "cupones": cupones, "canjes": canjes}
+
+
 async def registrar_visita_por_codigo(
     empresa_id: PydanticObjectId, codigo_cliente: str, monto: float | None = None,
 ) -> tuple[dict | None, str | None]:

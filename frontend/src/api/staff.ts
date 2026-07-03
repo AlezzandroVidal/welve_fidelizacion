@@ -40,6 +40,11 @@ export const staffApi = {
   clientePorCodigo: (codigoCliente: string) =>
     api.get<ClienteStaffResponse>(`/staff/cliente/${encodeURIComponent(codigoCliente)}`),
 
+  /** El QR personal del cliente (/wallet/mi-qr) codifica welve://cliente/{id},
+   * no su codigo_cliente WLV-XXXX — esta es la variante que reconoce eso. */
+  clientePorQR: (clienteId: string) =>
+    api.get<ClienteStaffResponse>(`/staff/cliente/por-qr/${encodeURIComponent(clienteId)}`),
+
   visitaPorCodigo: (codigoCliente: string, monto?: number) =>
     api.post<VisitaStaffResponse>("/staff/visita/por-codigo", { codigo_cliente: codigoCliente, monto }),
 

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { UserCircle2, X, QrCode } from "lucide-react";
-import { useClientePorCodigo } from "../../../hooks/useStaff";
+import { useClientePorCodigo, useClientePorQR } from "../../../hooks/useStaff";
 import type { ClienteEnCaja } from "../../../hooks/useCaja";
+import type { ClienteStaffResponse } from "../../../api/staff";
 import { Input } from "../../ui";
 import BarcodeScannerModal from "./BarcodeScannerModal";
 
@@ -11,37 +12,59 @@ interface Props {
 }
 
 const CODIGO_RE = /^WLV-[A-Z0-9]{4}$/i;
+// El QR personal del cliente (/wallet/mi-qr) codifica esto, no su
+// codigo_cliente — ver wallet_service.get_mi_qr.
+const QR_CLIENTE_RE = /^welve:\/\/cliente\/([^/]+)$/;
+
+function aClienteEnCaja(data: ClienteStaffResponse): ClienteEnCaja {
+  return {
+    id: data.cliente.id,
+    nombre: data.cliente.nombre,
+    codigoCliente: data.cliente.codigoCliente,
+    visitasTotales: data.relacion.visitasTotales,
+    segmento: data.relacion.segmento,
+    cuponesDisponibles: data.cuponesDisponibles,
+  };
+}
 
 export default function ClienteIdentificacion({ cliente, onIdentificar }: Props) {
   const [input, setInput] = useState("");
-  const [buscando, setBuscando] = useState<string | null>(null);
+  const [buscandoCodigo, setBuscandoCodigo] = useState<string | null>(null);
+  const [buscandoQrId, setBuscandoQrId] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const { data, isError } = useClientePorCodigo(buscando);
+  const [errorScan, setErrorScan] = useState(false);
+  const porCodigo = useClientePorCodigo(buscandoCodigo);
+  const porQR = useClientePorQR(buscandoQrId);
 
   useEffect(() => {
+    const data = porCodigo.data ?? porQR.data;
     if (!data) return;
-    onIdentificar({
-      id: data.cliente.id,
-      nombre: data.cliente.nombre,
-      codigoCliente: data.cliente.codigoCliente,
-      visitasTotales: data.relacion.visitasTotales,
-      segmento: data.relacion.segmento,
-      cuponesDisponibles: data.cuponesDisponibles,
-    });
-    setBuscando(null);
+    onIdentificar(aClienteEnCaja(data));
+    setBuscandoCodigo(null);
+    setBuscandoQrId(null);
     setInput("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [porCodigo.data, porQR.data]);
 
-  function buscar(codigo?: string) {
+  function buscarCodigo(codigo?: string) {
     const c = (codigo ?? input).trim();
     if (!c) return;
-    setBuscando(c);
+    setErrorScan(false);
+    setBuscandoQrId(null);
+    setBuscandoCodigo(c);
   }
 
-  function handleScan(codigo: string) {
+  function handleScan(texto: string) {
     setScannerOpen(false);
-    if (CODIGO_RE.test(codigo)) buscar(codigo);
+    const qrMatch = QR_CLIENTE_RE.exec(texto.trim());
+    if (qrMatch) {
+      setErrorScan(false);
+      setBuscandoCodigo(null);
+      setBuscandoQrId(qrMatch[1]);
+      return;
+    }
+    if (CODIGO_RE.test(texto)) { buscarCodigo(texto); return; }
+    setErrorScan(true);
   }
 
   if (cliente) {
@@ -67,7 +90,7 @@ export default function ClienteIdentificacion({ cliente, onIdentificar }: Props)
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && buscar()}
+          onKeyDown={(e) => e.key === "Enter" && buscarCodigo()}
           placeholder="Código cliente WLV-XXXX"
           className="flex-1"
         />
@@ -78,7 +101,10 @@ export default function ClienteIdentificacion({ cliente, onIdentificar }: Props)
           <QrCode size={18} />
         </button>
       </div>
-      {isError && buscando && <p className="mt-1.5 text-xs text-red-500">Código no encontrado</p>}
+      {(porCodigo.isError || porQR.isError) && (
+        <p className="mt-1.5 text-xs text-red-500">Código no encontrado</p>
+      )}
+      {errorScan && <p className="mt-1.5 text-xs text-red-500">Ese QR no es un código de cliente de Welve</p>}
       <BarcodeScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onCodigo={handleScan} />
     </div>
   );
