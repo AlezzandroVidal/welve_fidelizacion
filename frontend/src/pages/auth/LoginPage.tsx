@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { authApi } from "../../api/auth";
 import { useAuth } from "../../context/AuthContext";
 
@@ -23,7 +23,7 @@ type ClienteForm = z.infer<typeof clienteSchema>;
 
 // ── Sub-forms ─────────────────────────────────────────────────────────────────
 
-function EmpresaLoginForm() {
+function EmpresaLoginForm({ redirect }: { redirect: string | null }) {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState("");
@@ -36,7 +36,7 @@ function EmpresaLoginForm() {
     try {
       const res = await authApi.loginEmpresa(data.email, data.password);
       login(res.data.accessToken);
-      navigate("/admin/dashboard");
+      navigate(redirect || "/admin/dashboard");
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setServerError(msg ?? "Error al iniciar sesión");
@@ -61,7 +61,7 @@ function EmpresaLoginForm() {
   );
 }
 
-function ClienteLoginForm() {
+function ClienteLoginForm({ redirect }: { redirect: string | null }) {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState("");
@@ -74,7 +74,7 @@ function ClienteLoginForm() {
     try {
       const res = await authApi.loginCliente(data.email, data.password);
       login(res.data.accessToken);
-      navigate("/wallet");
+      navigate(redirect || "/wallet");
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setServerError(msg ?? "Error al iniciar sesión");
@@ -137,7 +137,9 @@ const input = (hasError: boolean) =>
 type Tab = "empresa" | "cliente";
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<Tab>("empresa");
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect");
+  const [tab, setTab] = useState<Tab>(redirect?.startsWith("/wallet") ? "cliente" : "empresa");
 
   return (
     <div className="min-h-screen bg-welve-100 flex items-center justify-center p-4">
@@ -199,7 +201,7 @@ export default function LoginPage() {
 
           {/* Form */}
           <div className="animate-fade-up" key={tab}>
-            {tab === "empresa" ? <EmpresaLoginForm /> : <ClienteLoginForm />}
+            {tab === "empresa" ? <EmpresaLoginForm redirect={redirect} /> : <ClienteLoginForm redirect={redirect} />}
           </div>
         </div>
       </div>
