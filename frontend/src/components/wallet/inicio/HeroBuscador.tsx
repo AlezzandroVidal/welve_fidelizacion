@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Ticket, Store } from 'lucide-react';
+import { Search, Ticket, Store, Sparkles, Gift } from 'lucide-react';
 import { useBusqueda } from '../../../hooks/useWallet';
 
 interface Props {
@@ -24,11 +24,20 @@ export default function HeroBuscador({
   const showDropdown = focused && search.trim() !== '';
 
   return (
-    <div className="relative rounded-b-[40px] bg-welve-600 px-6 pt-8 pb-14 text-white shadow-lg">
-      <h1 className="mb-2 text-2xl font-bold">¡Bienvenido{nombreCliente ? `, ${nombreCliente}` : ''}! 👋</h1>
-      <p className="mb-6 text-sm text-welve-100">Descubre beneficios en tus lugares favoritos</p>
+    <div className="relative rounded-b-[40px] bg-welve-600 px-4 pt-8 pb-14 text-white shadow-lg sm:px-6">
+      {/* Los íconos decorativos van en su propia capa recortada — el buscador
+          de abajo necesita salirse del hero (-bottom-6) para flotar sobre el
+          contenido siguiente, así que overflow-hidden no puede vivir en la
+          raíz o se lo recorta a él también. */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-b-[40px]">
+        <Gift size={140} strokeWidth={1.5} className="absolute -right-8 -top-8 rotate-12 text-white opacity-[0.08]" />
+        <Sparkles size={64} strokeWidth={1.5} className="absolute right-16 top-24 text-white opacity-[0.08]" />
+      </div>
 
-      <div className="-mx-6 flex gap-3 overflow-x-auto px-6 pb-2 scrollbar-hide">
+      <h1 className="relative z-10 mb-2 text-2xl font-bold">¡Bienvenido{nombreCliente ? `, ${nombreCliente}` : ''}! 👋</h1>
+      <p className="relative z-10 mb-6 text-sm text-welve-100">Descubre beneficios en tus lugares favoritos</p>
+
+      <div className="relative z-10 flex flex-wrap gap-3">
         <div className="flex-shrink-0 rounded-2xl border border-white/10 bg-white/20 px-4 py-2 backdrop-blur-md">
           <span className="block text-[10px] font-semibold uppercase tracking-wide text-welve-100">Empresas</span>
           <span className="font-bold">{totalEmpresas}</span>
@@ -43,7 +52,7 @@ export default function HeroBuscador({
         </div>
       </div>
 
-      <div className="absolute -bottom-6 left-6 right-6 z-20">
+      <div className="absolute -bottom-6 left-4 right-4 z-20 sm:left-6 sm:right-6">
         <div className="flex items-center gap-3 rounded-2xl bg-white p-2 shadow-xl shadow-gray-200/50">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-gray-400">
             <Search size={20} />

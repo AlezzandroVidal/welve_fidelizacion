@@ -7,6 +7,7 @@ import { useMisRetos } from '../hooks/useMisRetos';
 import { useNotificaciones } from '../hooks/useNotificaciones';
 import Sidebar, { SIDEBAR_W, SIDEBAR_W_COLLAPSED, type SidebarNavGroup } from '../components/layout/Sidebar';
 import NotificacionesSheet from '../components/wallet/NotificacionesSheet';
+import logoWelveIcon from '../resources/logo_welve_icon.png';
 
 export default function WalletLayout() {
   const location = useLocation();
@@ -73,8 +74,8 @@ export default function WalletLayout() {
         style={{ ['--sidebar-offset' as string]: `${sideW + 24}px` }}
       >
         {/* MOBILE TOP BAR */}
-        <header className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-sm">
-          <div className="px-4 h-14 flex items-center justify-between">
+        <header className="md:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
+          <div className="px-4 h-16 flex items-center justify-between">
             {isInteriorPage ? (
               <div className="flex items-center gap-2">
                 <button
@@ -89,7 +90,7 @@ export default function WalletLayout() {
               <>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 bg-welve-500 rounded-md flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">W</span>
+                    <img src={logoWelveIcon} alt="Welve" className="h-4 w-4 object-contain" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

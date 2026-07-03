@@ -8,6 +8,7 @@ import TusEmpresasList from '../../components/wallet/inicio/TusEmpresasList';
 import CuponesPorCategoria from '../../components/wallet/inicio/CuponesPorCategoria';
 import TusRetosSection from '../../components/wallet/inicio/TusRetosSection';
 import ProximosBeneficiosSection from '../../components/wallet/inicio/ProximosBeneficiosSection';
+import OnboardingWallet, { onboardingWalletCompletado } from '../../components/wallet/OnboardingWallet';
 
 const CATEGORIAS = [
   { id: 'todos', label: 'Todos', icon: Search },
@@ -20,6 +21,7 @@ const CATEGORIAS = [
 export default function InicioPage() {
   const [search, setSearch] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState('todos');
+  const [showOnboarding, setShowOnboarding] = useState(() => !onboardingWalletCompletado());
 
   const { data: empresasData, isLoading } = useEmpresasWallet();
   const { data: perfilData } = usePerfil();
@@ -56,9 +58,9 @@ export default function InicioPage() {
         cuponesDestacados={cuponesDestacadosGlobal}
       />
 
-      <div className="mt-12 px-6">
+      <div className="mt-12 px-4 sm:px-6">
         {/* FILTROS */}
-        <div className="-mx-6 mt-4 flex gap-3 overflow-x-auto px-6 pb-4 scrollbar-hide">
+        <div className="-mx-4 mt-4 flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-hide sm:-mx-6 sm:px-6">
           {CATEGORIAS.map((cat) => {
             const Icon = cat.icon;
             const isActive = categoriaActiva === cat.id;
@@ -114,6 +116,8 @@ export default function InicioPage() {
 
         {sinFiltrosActivos && <CuponesPorCategoria cupones={cuponesDestacadosGlobal} />}
       </div>
+
+      {showOnboarding && <OnboardingWallet onDone={() => setShowOnboarding(false)} />}
     </div>
   );
 }

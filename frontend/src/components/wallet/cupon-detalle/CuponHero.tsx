@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Share2 } from 'lucide-react';
+import { ArrowLeft, Share2, Ticket } from 'lucide-react';
 import type { CuponDetalle } from '../../../api/wallet';
 
 const GRADIENTE_TIPO: Record<string, string> = {
@@ -52,6 +52,9 @@ export default function CuponHero({ cupon, onCompartir }: Props) {
           loading="lazy"
           className="absolute inset-0 h-full w-full object-cover"
         />
+      )}
+      {sinImagenNiColor && (
+        <Ticket size={200} strokeWidth={1.25} className="pointer-events-none absolute -right-10 -top-10 rotate-12 text-white opacity-[0.12]" />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 

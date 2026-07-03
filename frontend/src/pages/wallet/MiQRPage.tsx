@@ -28,9 +28,9 @@ export default function MiQRPage() {
   const qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(data.qr_data)}`;
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-white px-6 py-10 text-center">
-      <div className="mb-8 flex flex-col items-center">
-        <div className="mb-3 h-14 w-14 rounded-full bg-welve-100 p-1">
+    <div className="flex min-h-[100dvh] flex-col items-center bg-white px-4 py-8 text-center sm:px-6 sm:py-10">
+      <div className="mb-6 flex flex-col items-center sm:mb-8">
+        <div className="mb-3 h-14 w-14 flex-shrink-0 rounded-full bg-welve-100 p-1">
           {data.empresa.logo_url ? (
             <img src={data.empresa.logo_url} alt={data.empresa.nombre} className="h-full w-full rounded-full object-cover" />
           ) : (
@@ -42,12 +42,12 @@ export default function MiQRPage() {
         <h1 className="text-lg font-bold text-gray-900">{data.empresa.nombre}</h1>
       </div>
 
-      <div className="mb-6 rounded-[28px] border-2 border-dashed border-welve-200 p-4 shadow-xl">
-        <img src={qrImgSrc} width={280} height={280} alt="Tu código QR" className="rounded-xl" />
+      <div className="mb-6 w-full max-w-[280px] rounded-[28px] border-2 border-dashed border-welve-200 p-4 shadow-xl">
+        <img src={qrImgSrc} alt="Tu código QR" className="aspect-square w-full rounded-xl" />
       </div>
 
       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Tu código</p>
-      <p className="mb-6 text-4xl font-black tracking-[0.15em] text-welve-700">{data.codigo_cliente}</p>
+      <p className="mb-6 break-all text-3xl font-black tracking-[0.15em] text-welve-700 sm:text-4xl">{data.codigo_cliente}</p>
 
       <p className="mb-10 max-w-xs text-sm text-gray-500">
         Muestra este código al staff para registrar tu visita o canjear un beneficio.
