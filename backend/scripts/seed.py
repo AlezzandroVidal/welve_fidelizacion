@@ -92,8 +92,8 @@ EMPRESAS_DATA = [
         "email": "admin@caferitual.pe",
         "password": "Ritual2024!",
         "ticket": 28.0,
-        "logo_url": _img("photo-1509042239860-f550ce710b93", 200, 200),
-        "imagen_portada_url": _img("photo-1501339847302-ac426a4a7cbb", 800, 450),
+        "logo_url": _img("photo-1495474472287-4d71bcdd2085", 200, 200),
+        "imagen_portada_url": _img("photo-1501339847302-ac426a4a7cbb", 800, 400),
         "descripcion": "Café de especialidad tostado localmente, pasteles horneados a diario y el "
                        "mejor rincón para trabajar o desconectar en Miraflores. Desde 2019 servimos "
                        "cada taza con el mismo cuidado que la primera.",
@@ -110,8 +110,8 @@ EMPRESAS_DATA = [
         "email": "admin@salonlumina.pe",
         "password": "Lumina2024!",
         "ticket": 65.0,
-        "logo_url": _img("photo-1522337660859-02fbefca4702", 200, 200),
-        "imagen_portada_url": _img("photo-1560066984-138dadb4c035", 800, 450),
+        "logo_url": _img("photo-1633681926022-84c23e8cb2d6", 200, 200),
+        "imagen_portada_url": _img("photo-1560066984-138dadb4c035", 800, 400),
         "descripcion": "Salón de belleza boutique especializado en color, cortes y tratamientos "
                        "capilares premium. Nuestro equipo combina técnica y tendencia para que "
                        "salgas sintiéndote una nueva versión de ti misma.",
@@ -128,8 +128,8 @@ EMPRESAS_DATA = [
         "email": "admin@tiendamaki.pe",
         "password": "Maki2024!",
         "ticket": 42.0,
-        "logo_url": _img("photo-1523381210434-271e8be1f52b", 200, 200),
-        "imagen_portada_url": _img("photo-1445205170230-053b83016050", 800, 450),
+        "logo_url": _img("photo-1441986300917-64674bd600d8", 200, 200),
+        "imagen_portada_url": _img("photo-1555529669-e69e7aa0ba9a", 800, 400),
         "descripcion": "Ropa y accesorios curados con un ojo atento a las tendencias, sin perder "
                        "la calidad. Encuentra piezas únicas para renovar tu clóset cada temporada.",
         "direccion": "Av. Angamos Este 1420, Surquillo, Lima",
@@ -176,18 +176,18 @@ EMPRESAS_DATA = [
     },
 ]
 
-# 16 clientes únicos globales
+# 16 clientes únicos globales — foto_url solo en los primeros 10 (únicas URLs provistas)
 CLIENTES_DATA = [
-    {"nombre": "Ana García",     "email": "ana.garcia@gmail.com",     "whatsapp": "+51987654321", "dias_alta": 180},
-    {"nombre": "Carlos Quispe",  "email": "carlos.quispe@gmail.com",  "whatsapp": "+51976543210", "dias_alta": 155},
-    {"nombre": "María López",    "email": "maria.lopez@gmail.com",    "whatsapp": "+51965432109", "dias_alta": 130},
-    {"nombre": "Pedro Mamani",   "email": "pedro.mamani@gmail.com",   "whatsapp": "+51954321098", "dias_alta": 110},
-    {"nombre": "Lucía Ramos",    "email": "lucia.ramos@gmail.com",    "whatsapp": "+51943210987", "dias_alta":  90},
-    {"nombre": "Jorge Huanca",   "email": "jorge.huanca@gmail.com",   "whatsapp": "+51932109876", "dias_alta":  70},
-    {"nombre": "Rosa Vargas",    "email": "rosa.vargas@gmail.com",    "whatsapp": "+51921098765", "dias_alta":  50},
-    {"nombre": "Miguel Torres",  "email": "miguel.torres@gmail.com",  "whatsapp": "+51910987654", "dias_alta":  40},
-    {"nombre": "Elena Flores",   "email": "elena.flores@gmail.com",   "whatsapp": "+51999876543", "dias_alta":  25},
-    {"nombre": "Diego Chávez",   "email": "diego.chavez@gmail.com",   "whatsapp": "+51988765432", "dias_alta":  10},
+    {"nombre": "Ana García",     "email": "ana.garcia@gmail.com",     "whatsapp": "+51987654321", "dias_alta": 180, "foto_url": _img("photo-1494790108377-be9c29b29330", 200, 200) + "&faces"},
+    {"nombre": "Carlos Quispe",  "email": "carlos.quispe@gmail.com",  "whatsapp": "+51976543210", "dias_alta": 155, "foto_url": _img("photo-1507003211169-0a1dd7228f2d", 200, 200) + "&faces"},
+    {"nombre": "María López",    "email": "maria.lopez@gmail.com",    "whatsapp": "+51965432109", "dias_alta": 130, "foto_url": _img("photo-1438761681033-6461ffad8d80", 200, 200) + "&faces"},
+    {"nombre": "Pedro Mamani",   "email": "pedro.mamani@gmail.com",   "whatsapp": "+51954321098", "dias_alta": 110, "foto_url": _img("photo-1472099645785-5658abf4ff4e", 200, 200) + "&faces"},
+    {"nombre": "Lucía Ramos",    "email": "lucia.ramos@gmail.com",    "whatsapp": "+51943210987", "dias_alta":  90, "foto_url": _img("photo-1544005313-94ddf0286df2", 200, 200) + "&faces"},
+    {"nombre": "Jorge Huanca",   "email": "jorge.huanca@gmail.com",   "whatsapp": "+51932109876", "dias_alta":  70, "foto_url": _img("photo-1500648767791-00dcc994a43e", 200, 200) + "&faces"},
+    {"nombre": "Rosa Vargas",    "email": "rosa.vargas@gmail.com",    "whatsapp": "+51921098765", "dias_alta":  50, "foto_url": _img("photo-1534528741775-53994a69daeb", 200, 200) + "&faces"},
+    {"nombre": "Miguel Torres",  "email": "miguel.torres@gmail.com",  "whatsapp": "+51910987654", "dias_alta":  40, "foto_url": _img("photo-1527980965255-d3b416303d12", 200, 200) + "&faces"},
+    {"nombre": "Elena Flores",   "email": "elena.flores@gmail.com",   "whatsapp": "+51999876543", "dias_alta":  25, "foto_url": _img("photo-1580489944761-15a19d654956", 200, 200) + "&faces"},
+    {"nombre": "Diego Chávez",   "email": "diego.chavez@gmail.com",   "whatsapp": "+51988765432", "dias_alta":  10, "foto_url": _img("photo-1570295999919-56ceb5ecca61", 200, 200) + "&faces"},
     {"nombre": "Sofía Ramírez",  "email": "sofia.ramirez@gmail.com",  "whatsapp": "+51977123456", "dias_alta": 200},
     {"nombre": "Andrés Castro",  "email": "andres.castro@gmail.com",  "whatsapp": "+51966234567", "dias_alta": 165},
     {"nombre": "Valentina Ruiz", "email": "valentina.ruiz@gmail.com", "whatsapp": "+51955345678", "dias_alta": 120},
@@ -226,7 +226,7 @@ CUPONES_POR_EMPRESA: dict[str, list[dict]] = {
             "nombre": "15% de descuento en tu pedido",
             "tipo": TipoCupon.porcentual, "valor": 15.0, "monto_minimo": 30.0,
             "limite_usos_total": 100, "usos_actuales": 23, "destacado": True,
-            "imagen_url": _img("photo-1495474472287-4d71bcdd2085"),
+            "imagen_url": _img("photo-1495474472287-4d71bcdd2085", 600, 300),
             "tags": ["bebidas", "descuento"], "color_tema": "#3B82F6",
             "descripcion_larga": "Disfruta un 15% de descuento en cualquier pedido de nuestra carta, "
                                  "desde tu café favorito hasta el almuerzo del día. Ideal para tu "
@@ -239,7 +239,7 @@ CUPONES_POR_EMPRESA: dict[str, list[dict]] = {
             "nombre": "Café americano gratis",
             "tipo": TipoCupon.producto_gratis, "valor": None, "monto_minimo": None,
             "limite_usos_total": 50, "usos_actuales": 17, "destacado": True,
-            "imagen_url": _img("photo-1461023058943-07fcbe16d735"),
+            "imagen_url": _img("photo-1442512595331-e89e73853f31", 600, 300),
             "tags": ["bebidas", "favorito"], "color_tema": "#F97316",
             "descripcion_larga": "Un café americano recién preparado, por cortesía de la casa para "
                                  "nuestros clientes más fieles. Perfecto para acompañar tu "
@@ -292,7 +292,7 @@ CUPONES_POR_EMPRESA: dict[str, list[dict]] = {
             "nombre": "15% de descuento en cualquier servicio",
             "tipo": TipoCupon.porcentual, "valor": 15.0, "monto_minimo": 30.0,
             "limite_usos_total": 100, "usos_actuales": 23, "destacado": True,
-            "imagen_url": _img("photo-1519415943484-9fa1873496d4"),
+            "imagen_url": _img("photo-1470259078422-826894b933aa", 600, 300),
             "tags": ["spa", "descuento"], "color_tema": "#3B82F6",
             "descripcion_larga": "15% de descuento en cualquier servicio del salón: corte, color, "
                                  "tratamientos o spa. Tu momento de cuidado personal, más accesible.",
@@ -304,7 +304,7 @@ CUPONES_POR_EMPRESA: dict[str, list[dict]] = {
             "nombre": "Manicure gratis",
             "tipo": TipoCupon.producto_gratis, "valor": None, "monto_minimo": None,
             "limite_usos_total": 50, "usos_actuales": 17, "destacado": True,
-            "imagen_url": _img("photo-1487412720507-e7ab37603c6f"),
+            "imagen_url": _img("photo-1487412947147-5cebf100ffc2", 600, 300),
             "tags": ["manicure", "favorito"], "color_tema": "#F97316",
             "descripcion_larga": "Un manicure clásico de cortesía para nuestras clientas más fieles, "
                                  "con los mejores esmaltes de temporada.",
@@ -368,7 +368,7 @@ CUPONES_POR_EMPRESA: dict[str, list[dict]] = {
             "nombre": "15% de descuento en tu compra",
             "tipo": TipoCupon.porcentual, "valor": 15.0, "monto_minimo": 30.0,
             "limite_usos_total": 100, "usos_actuales": 23, "destacado": True,
-            "imagen_url": _img("photo-1441986300917-64674bd600d8"),
+            "imagen_url": _img("photo-1483985988355-763728e1935b", 600, 300),
             "tags": ["ropa", "descuento"], "color_tema": "#3B82F6",
             "descripcion_larga": "15% de descuento en cualquier prenda o accesorio de la tienda. "
                                  "Renueva tu clóset con las últimas tendencias de temporada.",
@@ -380,7 +380,7 @@ CUPONES_POR_EMPRESA: dict[str, list[dict]] = {
             "nombre": "Polo gratis",
             "tipo": TipoCupon.producto_gratis, "valor": None, "monto_minimo": None,
             "limite_usos_total": 50, "usos_actuales": 17, "destacado": True,
-            "imagen_url": _img("photo-1483985988355-763728e1935b"),
+            "imagen_url": _img("photo-1607082348824-0a96f2a4b9da", 600, 300),
             "tags": ["ropa", "favorito"], "color_tema": "#F97316",
             "descripcion_larga": "Un polo básico de cortesía para nuestros clientes más fieles — "
                                  "se desbloquea automáticamente al superar S/300 de compras en 30 días.",
@@ -536,29 +536,29 @@ MEMBRESIAS_DATA: dict[str, dict] = {
 # inventario), Café Ritual y Tienda Maki son productos físicos con stock.
 PRODUCTOS_POR_EMPRESA: dict[str, list[dict]] = {
     "Café Ritual": [
-        {"nombre": "Café americano",     "sku": "CAF-001", "categoria": "Bebidas",       "precio_base": 8.0,  "stock_actual": 100},
-        {"nombre": "Café latte",         "sku": "CAF-002", "categoria": "Bebidas",       "precio_base": 10.0, "stock_actual": 80},
-        {"nombre": "Cappuccino",         "sku": "CAF-003", "categoria": "Bebidas",       "precio_base": 10.0, "stock_actual": 80},
-        {"nombre": "Croissant",          "sku": "COM-001", "categoria": "Comida",        "precio_base": 6.0,  "stock_actual": 30},
-        {"nombre": "Tostada con palta",  "sku": "COM-002", "categoria": "Comida",        "precio_base": 12.0, "stock_actual": 25},
-        {"nombre": "Bowl de granola",    "sku": "COM-003", "categoria": "Comida",        "precio_base": 14.0, "stock_actual": 20},
-        {"nombre": "Taza Café Ritual",   "sku": "MER-001", "categoria": "Merchandising", "precio_base": 35.0, "stock_actual": 15},
+        {"nombre": "Café americano",     "sku": "CAF-001", "categoria": "Bebidas",       "precio_base": 8.0,  "stock_actual": 100, "imagen_url": _img("photo-1509042239860-f550ce710b93", 400, 400)},
+        {"nombre": "Café latte",         "sku": "CAF-002", "categoria": "Bebidas",       "precio_base": 10.0, "stock_actual": 80,  "imagen_url": _img("photo-1561882468-9110e03e0f78", 400, 400)},
+        {"nombre": "Cappuccino",         "sku": "CAF-003", "categoria": "Bebidas",       "precio_base": 10.0, "stock_actual": 80,  "imagen_url": _img("photo-1572442388796-11668a67e53d", 400, 400)},
+        {"nombre": "Croissant",          "sku": "COM-001", "categoria": "Comida",        "precio_base": 6.0,  "stock_actual": 30,  "imagen_url": _img("photo-1555507036-ab1f4038808a", 400, 400)},
+        {"nombre": "Tostada con palta",  "sku": "COM-002", "categoria": "Comida",        "precio_base": 12.0, "stock_actual": 25,  "imagen_url": _img("photo-1541519227354-08fa5d50c820", 400, 400)},
+        {"nombre": "Bowl de granola",    "sku": "COM-003", "categoria": "Comida",        "precio_base": 14.0, "stock_actual": 20,  "imagen_url": _img("photo-1490323814535-a60f5a5b0faa", 400, 400)},
+        {"nombre": "Taza Café Ritual",   "sku": "MER-001", "categoria": "Merchandising", "precio_base": 35.0, "stock_actual": 15,  "imagen_url": _img("photo-1514228742587-6b1558fcca3d", 400, 400)},
     ],
     "Salón Lumina": [
-        {"nombre": "Corte de cabello",      "sku": "COR-001", "categoria": "Cortes",        "precio_base": 35.0,  "tipo": TipoProducto.servicio, "gestionar_inventario": False},
-        {"nombre": "Tinte completo",        "sku": "TIN-001", "categoria": "Tratamientos",  "precio_base": 120.0, "tipo": TipoProducto.servicio, "gestionar_inventario": False},
-        {"nombre": "Keratina",              "sku": "TRA-001", "categoria": "Tratamientos",  "precio_base": 180.0, "tipo": TipoProducto.servicio, "gestionar_inventario": False},
-        {"nombre": "Manicure",              "sku": "MAN-001", "categoria": "Tratamientos",  "precio_base": 25.0,  "tipo": TipoProducto.servicio, "gestionar_inventario": False},
-        {"nombre": "Shampoo profesional",   "sku": "PRO-001", "categoria": "Productos",     "precio_base": 65.0,  "stock_actual": 20},
-        {"nombre": "Mascarilla capilar",    "sku": "PRO-002", "categoria": "Productos",     "precio_base": 45.0,  "stock_actual": 15},
+        {"nombre": "Corte de cabello",      "sku": "COR-001", "categoria": "Cortes",        "precio_base": 35.0,  "tipo": TipoProducto.servicio, "gestionar_inventario": False, "imagen_url": _img("photo-1562322140-8baeececf3df", 400, 400)},
+        {"nombre": "Tinte completo",        "sku": "TIN-001", "categoria": "Tratamientos",  "precio_base": 120.0, "tipo": TipoProducto.servicio, "gestionar_inventario": False, "imagen_url": _img("photo-1522337360788-8b13dee7a37e", 400, 400)},
+        {"nombre": "Keratina",              "sku": "TRA-001", "categoria": "Tratamientos",  "precio_base": 180.0, "tipo": TipoProducto.servicio, "gestionar_inventario": False, "imagen_url": _img("photo-1521590832167-7bcbfaa6381f", 400, 400)},
+        {"nombre": "Manicure",              "sku": "MAN-001", "categoria": "Tratamientos",  "precio_base": 25.0,  "tipo": TipoProducto.servicio, "gestionar_inventario": False, "imagen_url": _img("photo-1604654894610-df63bc536371", 400, 400)},
+        {"nombre": "Shampoo profesional",   "sku": "PRO-001", "categoria": "Productos",     "precio_base": 65.0,  "stock_actual": 20,  "imagen_url": _img("photo-1585751119414-ef2636f8aede", 400, 400)},
+        {"nombre": "Mascarilla capilar",    "sku": "PRO-002", "categoria": "Productos",     "precio_base": 45.0,  "stock_actual": 15,  "imagen_url": _img("photo-1556228578-8c89e6adf883", 400, 400)},
     ],
     "Tienda Maki": [
-        {"nombre": "Polo básico",          "sku": "ROP-001", "categoria": "Ropa",        "precio_base": 49.0,  "stock_actual": 50},
-        {"nombre": "Jeans slim",           "sku": "ROP-002", "categoria": "Ropa",        "precio_base": 129.0, "stock_actual": 30},
-        {"nombre": "Vestido casual",       "sku": "ROP-003", "categoria": "Ropa",        "precio_base": 89.0,  "stock_actual": 20},
-        {"nombre": "Bolso de mano",        "sku": "ACC-001", "categoria": "Accesorios",  "precio_base": 79.0,  "stock_actual": 15},
-        {"nombre": "Cinturón de cuero",    "sku": "ACC-002", "categoria": "Accesorios",  "precio_base": 45.0,  "stock_actual": 25},
-        {"nombre": "Zapatillas urbanas",   "sku": "CAL-001", "categoria": "Calzado",     "precio_base": 159.0, "stock_actual": 20},
+        {"nombre": "Polo básico",          "sku": "ROP-001", "categoria": "Ropa",        "precio_base": 49.0,  "stock_actual": 50, "imagen_url": _img("photo-1521572163474-6864f9cf17ab", 400, 400)},
+        {"nombre": "Jeans slim",           "sku": "ROP-002", "categoria": "Ropa",        "precio_base": 129.0, "stock_actual": 30, "imagen_url": _img("photo-1542272604-787c3835535d", 400, 400)},
+        {"nombre": "Vestido casual",       "sku": "ROP-003", "categoria": "Ropa",        "precio_base": 89.0,  "stock_actual": 20, "imagen_url": _img("photo-1595777457583-95e059d581b8", 400, 400)},
+        {"nombre": "Bolso de mano",        "sku": "ACC-001", "categoria": "Accesorios",  "precio_base": 79.0,  "stock_actual": 15, "imagen_url": _img("photo-1548036328-c9fa89d128fa", 400, 400)},
+        {"nombre": "Cinturón de cuero",    "sku": "ACC-002", "categoria": "Accesorios",  "precio_base": 45.0,  "stock_actual": 25, "imagen_url": _img("photo-1553062407-98eeb64c6a62", 400, 400)},
+        {"nombre": "Zapatillas urbanas",   "sku": "CAL-001", "categoria": "Calzado",     "precio_base": 159.0, "stock_actual": 20, "imagen_url": _img("photo-1542291026-7eec264c27ff", 400, 400)},
     ],
     "Pizzería Bella Napoli": [
         {"nombre": "Pizza margarita",       "sku": "PIZ-001", "categoria": "Pizzas",   "precio_base": 32.0, "stock_actual": 40},
@@ -697,7 +697,16 @@ async def seed_clientes() -> list[Cliente]:
     for data in CLIENTES_DATA:
         existing = await Cliente.find_one(Cliente.email == data["email"])
         if existing:
-            print(f"  [skip] Cliente {data['nombre']}")
+            # Backfilla foto_url aunque el cliente ya exista, igual que
+            # seed_empresas con el perfil — permite poblar fotos agregadas
+            # después del primer seed sin duplicar el documento.
+            foto_url = data.get("foto_url")
+            if foto_url and existing.foto_url != foto_url:
+                existing.foto_url = foto_url
+                await existing.save()
+                print(f"  [update] Cliente {data['nombre']} (foto actualizada)")
+            else:
+                print(f"  [skip] Cliente {data['nombre']}")
             clientes.append(existing)
             continue
         try:
@@ -707,6 +716,7 @@ async def seed_clientes() -> list[Cliente]:
                 email=data["email"],
                 whatsapp=data["whatsapp"],
                 password_hash=hash_password("password123"),
+                foto_url=data.get("foto_url"),
                 codigo_cliente=await _generar_codigo_cliente_unico(),
                 fecha_alta=_ago(data["dias_alta"]),
             ).insert()
@@ -1000,8 +1010,16 @@ async def seed_productos(empresas: list[Empresa]) -> dict[str, list[Producto]]:
         for data in PRODUCTOS_POR_EMPRESA[empresa.nombre]:
             existing = await Producto.find_one(Producto.empresa_id == empresa.id, Producto.sku == data["sku"])
             if existing:
+                # Backfilla imagen_url aunque el producto ya exista, mismo
+                # criterio que seed_empresas/seed_clientes con sus fotos.
+                imagen_url = data.get("imagen_url")
+                if imagen_url and existing.imagen_url != imagen_url:
+                    existing.imagen_url = imagen_url
+                    await existing.save()
+                    print(f"  [update] Producto {data['sku']} / {empresa.nombre} (imagen actualizada)")
+                else:
+                    print(f"  [skip] Producto {data['sku']} / {empresa.nombre}")
                 result[empresa.nombre].append(existing)
-                print(f"  [skip] Producto {data['sku']} / {empresa.nombre}")
                 continue
             payload = {**_PRODUCTO_DEFAULTS, **data}
             precio_con_igv = round(payload["precio_base"] * 1.18, 2) if payload["tiene_igv"] else payload["precio_base"]
