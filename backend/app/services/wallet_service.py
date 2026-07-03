@@ -79,16 +79,19 @@ async def get_empresas_wallet(cliente_id: PydanticObjectId) -> List[Dict[str, An
         })
     return resultado
 
-async def get_empresa_detalle(empresa_id: PydanticObjectId, cliente_id: PydanticObjectId) -> Dict[str, Any]:
+async def get_empresa_detalle(empresa_id: PydanticObjectId, cliente_id: Optional[PydanticObjectId]) -> Dict[str, Any]:
+    """cliente_id es None para visitantes anónimos (endpoint público, ver
+    routers/wallet.py) — mi_relacion/progreso de retos caen a None/0, pero
+    el resto del contenido (cupones públicos, retos, info) se ve igual."""
     now = datetime.now(timezone.utc)
     emp = await Empresa.get(empresa_id)
     if not emp or emp.estado != EstadoEmpresa.activo:
         raise HTTPException(status_code=404, detail="Empresa no encontrada o inactiva")
-        
+
     rel = await RelacionClienteEmpresa.find_one(
         RelacionClienteEmpresa.empresa_id == empresa_id,
-        RelacionClienteEmpresa.cliente_id == cliente_id
-    )
+        RelacionClienteEmpresa.cliente_id == cliente_id,
+    ) if cliente_id else None
     
     cupones = await Cupon.find(
         Cupon.empresa_id == empresa_id,
@@ -113,15 +116,23 @@ async def get_empresa_detalle(empresa_id: PydanticObjectId, cliente_id: Pydantic
         Reto.cancelado == False,  # noqa: E712
     ).to_list()
 
+    reto_cupon_ids = [r.recompensa_cupon_id for r in retos if r.recompensa_cupon_id]
+    reto_cupones = await Cupon.find({"_id": {"$in": reto_cupon_ids}}).to_list() if reto_cupon_ids else []
+    reto_cupon_map = {c.id: c for c in reto_cupones}
+
     retos_response = []
     for r in retos:
         progreso = 0.0
         if rel:
             progreso = await progreso_service.calcular_progreso_reto(r, rel, empresa_id, cliente_id)
 
+        cupon_recompensa = reto_cupon_map.get(r.recompensa_cupon_id) if r.recompensa_cupon_id else None
         r_dict = r.model_dump(mode='json')
         r_dict["progreso_actual"] = progreso
         r_dict["porcentaje"] = min(100.0, progreso / r.condicion_valor * 100) if r.condicion_valor > 0 else 0
+        r_dict["cupon_recompensa"] = (
+            cupon_service.cupon_to_response(cupon_recompensa).model_dump(mode="json") if cupon_recompensa else None
+        )
         retos_response.append(r_dict)
         
     membresias = await Membresia.find(Membresia.empresa_id == empresa_id).to_list()

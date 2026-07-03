@@ -126,10 +126,14 @@ export interface RetoInfo {
   nombre: string;
   condicionTipo: string;
   condicionValor: number;
+  periodoDias: number | null;
+  productoObjetivoId: string | null;
+  categoriaObjetivo: string | null;
   fechaInicio: string;
   fechaFin: string;
   recompensaCuponId: string | null;
   recompensaCuponNombre: string | null;
+  descripcionRecompensa: string | null;
   notificado: boolean;
   cancelado: boolean;
 }

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout";
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import VerifyPage from "./pages/auth/VerifyPage";
@@ -41,7 +42,7 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/verify" element={<VerifyPage />} />
@@ -95,7 +96,6 @@ export default function App() {
               }
             >
               <Route index element={<InicioPage />} />
-              <Route path="empresa/:id" element={<EmpresaDetallePage />} />
               <Route path="mis-cupones" element={<MisCuponesPage />} />
               <Route path="mis-retos" element={<MisRetosPage />} />
               <Route path="historial" element={<HistorialPage />} />
@@ -104,6 +104,11 @@ export default function App() {
 
             {/* Detalle de cupón — PÚBLICA, compartible sin sesión; solo el canje requiere login */}
             <Route path="/wallet/cupon/:cuponId" element={<CuponDetallePage />} />
+
+            {/* Detalle de empresa — PÚBLICA (retos/cupones visibles sin sesión, con
+                progreso en 0%); fuera de WalletLayout porque su sidebar depende de
+                datos que solo existen para un cliente logueado (ver EmpresaHero) */}
+            <Route path="/wallet/empresa/:id" element={<EmpresaDetallePage />} />
 
             {/* Mi código — pantalla fullscreen sin sidebar, el cliente la muestra al staff */}
             <Route

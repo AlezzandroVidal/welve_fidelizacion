@@ -31,8 +31,11 @@ async def get_empresas(cliente: Cliente = Depends(get_global_cliente)):
     return {"empresas": empresas}
 
 @router.get("/empresas/{empresa_id}", response_model=Dict[str, Any])
-async def get_empresa_detalle(empresa_id: PydanticObjectId, cliente: Cliente = Depends(get_global_cliente)):
-    return await wallet_service.get_empresa_detalle(empresa_id, cliente.id)
+async def get_empresa_detalle(empresa_id: PydanticObjectId, cliente: Optional[Cliente] = Depends(get_optional_cliente)):
+    """Público (como get_cupon_detalle) — la página de empresa del wallet es
+    compartible sin sesión; sin cliente, mi_relacion/progreso de retos caen
+    a None/0 pero el contenido (cupones públicos, retos, info) se ve igual."""
+    return await wallet_service.get_empresa_detalle(empresa_id, cliente.id if cliente else None)
 
 @router.get("/empresas/{empresa_id}/cupones", response_model=Dict[str, List[Dict[str, Any]]])
 async def get_cupones_por_empresa(

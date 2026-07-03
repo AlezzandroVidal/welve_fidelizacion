@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Target, Compass } from "lucide-react";
+import { Target, Trophy } from "lucide-react";
 import { useMisRetos } from "../../hooks/useMisRetos";
 import { useCupones, useDesbloquearCupon } from "../../hooks/useWallet";
 import { useToast } from "../../hooks/useToast";
 import { Toaster } from "../../components/ui";
-import RetoCard from "../../components/wallet/retos/RetoCard";
+import RetoCard, { type RetoCardData } from "../../components/wallet/retos/RetoCard";
+import RetoDetalleSheet from "../../components/wallet/retos/RetoDetalleSheet";
 
 export default function MisRetosPage() {
   const { data: empresas = [], isLoading } = useMisRetos();
@@ -13,6 +14,7 @@ export default function MisRetosPage() {
   const desbloquear = useDesbloquearCupon();
   const toast = useToast();
   const [reclamando, setReclamando] = useState<string | null>(null);
+  const [detalle, setDetalle] = useState<RetoCardData | null>(null);
 
   // Cupones visibilidad=por_reto, indexados por reto_id — permite mostrar el
   // botón "Reclamar" o el badge "ya enviado" sobre cada RetoCard.
@@ -50,7 +52,7 @@ export default function MisRetosPage() {
       {empresas.length === 0 ? (
         <div className="flex flex-col items-center py-16 text-center">
           <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-welve-50">
-            <Compass size={32} className="text-welve-300" />
+            <Trophy size={32} className="text-welve-300" />
           </div>
           <p className="text-sm font-semibold text-gray-600">No tienes retos activos en este momento</p>
           <p className="mt-1 max-w-[240px] text-xs text-gray-400">Visita más empresas para participar en sus programas</p>
@@ -79,23 +81,28 @@ export default function MisRetosPage() {
               <div className="space-y-3">
                 {e.retos.map((r) => {
                   const cuponPorReto = cuponesPorReto.get(r.reto.id) ?? null;
+                  const data: RetoCardData = {
+                    id: r.reto.id,
+                    nombre: r.reto.nombre,
+                    condicionTipo: r.reto.condicionTipo,
+                    periodoDias: r.reto.periodoDias,
+                    progresoActual: r.progreso_actual,
+                    meta: r.meta,
+                    porcentaje: r.porcentaje,
+                    completado: r.completado,
+                    cuponRecompensaNombre: r.cupon_recompensa?.nombre ?? r.reto.recompensaCuponNombre ?? null,
+                    cuponRecompensa: r.cupon_recompensa,
+                    diasRestantes: r.dias_restantes,
+                    empresaNombre: e.empresa.nombre,
+                    cuponPorReto,
+                  };
                   return (
                     <RetoCard
                       key={r.reto.id}
-                      reto={{
-                        id: r.reto.id,
-                        nombre: r.reto.nombre,
-                        condicionTipo: r.reto.condicionTipo,
-                        progresoActual: r.progreso_actual,
-                        meta: r.meta,
-                        porcentaje: r.porcentaje,
-                        completado: r.completado,
-                        cuponRecompensaNombre: r.cupon_recompensa?.nombre ?? r.reto.recompensaCuponNombre ?? null,
-                        diasRestantes: r.dias_restantes,
-                        cuponPorReto,
-                      }}
+                      reto={data}
                       onReclamar={cuponPorReto ? () => handleReclamar(cuponPorReto.id) : undefined}
                       reclamando={reclamando === cuponPorReto?.id}
+                      onVerDetalle={() => setDetalle(data)}
                     />
                   );
                 })}
@@ -104,6 +111,13 @@ export default function MisRetosPage() {
           ))}
         </div>
       )}
+
+      <RetoDetalleSheet
+        reto={detalle}
+        onClose={() => setDetalle(null)}
+        onReclamar={detalle?.cuponPorReto ? () => handleReclamar(cuponesPorReto.get(detalle.id)?.id ?? "") : undefined}
+        reclamando={!!detalle && reclamando === cuponesPorReto.get(detalle.id)?.id}
+      />
 
       <Toaster toasts={toast.toasts} onDismiss={toast.dismiss} />
     </div>

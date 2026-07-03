@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { LogIn } from 'lucide-react';
 import { useEmpresaDetalle } from '../../hooks/useWallet';
+import { useAuth } from '../../context/AuthContext';
 import EmpresaHero from '../../components/wallet/empresa/EmpresaHero';
 import TabCupones from '../../components/wallet/empresa/TabCupones';
 import RetoCard, { type RetoCardData } from '../../components/wallet/retos/RetoCard';
+import RetoDetalleSheet from '../../components/wallet/retos/RetoDetalleSheet';
 import TabInfo from '../../components/wallet/empresa/TabInfo';
 import ResenasSection from '../../components/wallet/ResenasSection';
 import CuponQRModal from '../../components/wallet/CuponQRModal';
@@ -20,8 +23,10 @@ type TabId = (typeof TABS)[number]['id'];
 export default function EmpresaDetallePage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useEmpresaDetalle(id || '');
+  const { isAuthenticated } = useAuth();
   const [tab, setTab] = useState<TabId>('cupones');
   const [qrCupon, setQrCupon] = useState<any | null>(null);
+  const [detalle, setDetalle] = useState<RetoCardData | null>(null);
 
   if (isLoading || !data) {
     return <div className="p-6 text-center animate-pulse">Cargando empresa...</div>;
@@ -37,18 +42,21 @@ export default function EmpresaDetallePage() {
       id: String(r._id ?? r.id),
       nombre: r.nombre,
       condicionTipo: r.condicion_tipo,
+      periodoDias: r.periodo_dias ?? null,
       progresoActual: r.progreso_actual,
       meta: r.condicion_valor,
       porcentaje: r.porcentaje,
       completado: r.progreso_actual >= r.condicion_valor,
       cuponRecompensaNombre: cuponId ? (cuponPorId.get(cuponId)?.nombre ?? null) : null,
+      cuponRecompensa: r.cupon_recompensa ?? null,
       diasRestantes,
+      empresaNombre: empresa.nombre,
     };
   });
 
   return (
     <div className="relative min-h-screen bg-welve-100 pb-10">
-      <EmpresaHero empresa={empresa} empresaId={id || ''} />
+      <EmpresaHero empresa={empresa} empresaId={id || ''} isAuthenticated={isAuthenticated} />
 
       <div className="sticky top-0 z-20 mt-6 bg-welve-100/95 px-6 py-3 backdrop-blur">
         <div className="flex gap-1 rounded-full bg-white p-1 shadow-sm">
@@ -71,13 +79,21 @@ export default function EmpresaDetallePage() {
           <TabCupones cupones={cupones} miRelacion={mi_relacion} onVerQR={setQrCupon} />
         )}
         {tab === 'retos' && (
-          retosData.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-400">No hay desafíos activos por ahora</p>
-          ) : (
-            <div className="space-y-3">
-              {retosData.map((r) => <RetoCard key={r.id} reto={r} />)}
-            </div>
-          )
+          <div className="space-y-3">
+            {!isAuthenticated && retosData.length > 0 && (
+              <div className="flex items-center gap-2 rounded-2xl border border-welve-100 bg-welve-50 px-4 py-3 text-xs font-semibold text-welve-700">
+                <LogIn size={14} className="flex-shrink-0" />
+                Inicia sesión para ver tu progreso en estos retos
+              </div>
+            )}
+            {retosData.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-400">No hay desafíos activos por ahora</p>
+            ) : (
+              retosData.map((r) => (
+                <RetoCard key={r.id} reto={r} onVerDetalle={() => setDetalle(r)} />
+              ))
+            )}
+          </div>
         )}
         {tab === 'info' && (
           <TabInfo
@@ -86,8 +102,21 @@ export default function EmpresaDetallePage() {
             miMembresia={mi_membresia}
           />
         )}
-        {tab === 'resenas' && id && <ResenasSection empresaId={id} puedeCalificar={!!mi_relacion} />}
+        {tab === 'resenas' && id && (
+          isAuthenticated ? (
+            <ResenasSection empresaId={id} puedeCalificar={!!mi_relacion} />
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <p className="text-sm text-gray-500">Inicia sesión para ver y dejar reseñas</p>
+              <a href={`/login?redirect=/wallet/empresa/${id}`} className="rounded-xl bg-welve-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-welve-600">
+                Iniciar sesión
+              </a>
+            </div>
+          )
+        )}
       </div>
+
+      <RetoDetalleSheet reto={detalle} onClose={() => setDetalle(null)} />
 
       {qrCupon && (
         <CuponQRModal cupon={qrCupon} empresaNombre={empresa.nombre} onClose={() => setQrCupon(null)} />

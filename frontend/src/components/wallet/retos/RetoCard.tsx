@@ -1,26 +1,26 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Gift, Lock } from "lucide-react";
+import { CheckCircle2, Gift, Lock, Target, ChevronRight } from "lucide-react";
+import { descripcionCondicion, comoCompletarlo } from "../../../utils/retos";
+import type { CuponResumen } from "../../../api/wallet";
 
 export interface RetoCardData {
   id: string;
   nombre: string;
   condicionTipo: string;
+  periodoDias?: number | null;
   progresoActual: number;
   meta: number;
   porcentaje: number;
   completado: boolean;
   cuponRecompensaNombre: string | null;
+  cuponRecompensa?: CuponResumen | null;
   diasRestantes: number;
+  empresaNombre?: string;
   /** Cupón visibilidad=por_reto ligado a este reto (distinto de
    * cuponRecompensaNombre, que es el mecanismo clásico de auto-canje) — si
    * existe, reemplaza el badge pasivo por un botón de reclamo o un estado
    * de "ya enviado". */
   cuponPorReto?: { nombre: string; estado: string } | null;
-}
-
-function descripcion(reto: RetoCardData): string {
-  if (reto.condicionTipo === "num_visitas") return `Visita ${reto.meta} veces y gana tu recompensa`;
-  return `Acumula S/ ${reto.meta} en compras y gana tu recompensa`;
 }
 
 const COLORES_CONFETTI = ["#7C5CFC", "#3FD17A", "#FCE38A", "#FAC9DC", "#A892F0"];
@@ -43,9 +43,10 @@ interface Props {
   reto: RetoCardData;
   onReclamar?: () => void;
   reclamando?: boolean;
+  onVerDetalle?: () => void;
 }
 
-export default function RetoCard({ reto, onReclamar, reclamando }: Props) {
+export default function RetoCard({ reto, onReclamar, reclamando, onVerDetalle }: Props) {
   const [ancho, setAncho] = useState(0);
 
   useEffect(() => {
@@ -54,25 +55,35 @@ export default function RetoCard({ reto, onReclamar, reclamando }: Props) {
   }, [reto.porcentaje]);
 
   const urgente = reto.diasRestantes <= 3 && !reto.completado;
+  const faltan = Math.max(0, reto.meta - reto.progresoActual);
+  const recompensa = reto.cuponRecompensa;
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border bg-white p-5 shadow-sm ${reto.completado ? "border-green-200" : "border-gray-100"}`}>
+    <div
+      onClick={onVerDetalle}
+      className={`relative overflow-hidden rounded-3xl border bg-white p-5 shadow-sm transition-shadow ${onVerDetalle ? "cursor-pointer hover:shadow-md" : ""} ${reto.completado ? "border-green-200" : "border-gray-100"}`}
+    >
       {reto.completado && <ConfettiCSS />}
 
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="mb-1 font-bold text-gray-900">{reto.nombre}</h3>
-          <p className="text-xs text-gray-500">{descripcion(reto)}</p>
+      <div className="mb-3 flex items-start gap-3">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-welve-50">
+          <Target size={20} className="text-welve-500" />
         </div>
-        {reto.completado ? (
-          <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[10px] font-bold text-green-700">
-            <CheckCircle2 size={12} /> ¡Completado!
-          </span>
-        ) : (
-          <span className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${urgente ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-500"}`}>
-            {reto.diasRestantes}d restantes
-          </span>
-        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-bold text-gray-900">{reto.nombre}</h3>
+            {reto.completado ? (
+              <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[10px] font-bold text-green-700">
+                <CheckCircle2 size={12} /> ¡Completado!
+              </span>
+            ) : (
+              <span className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${urgente ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-500"}`}>
+                {reto.diasRestantes}d restantes
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-gray-500">{descripcionCondicion(reto.condicionTipo, reto.meta, reto.periodoDias)}</p>
+        </div>
       </div>
 
       <div className="relative mb-1.5 h-3 w-full overflow-hidden rounded-full bg-gray-100">
@@ -88,9 +99,33 @@ export default function RetoCard({ reto, onReclamar, reclamando }: Props) {
         <span>{Math.round(reto.porcentaje)}%</span>
       </div>
 
+      {recompensa && (
+        <div className="mb-3 flex w-full items-center gap-3 rounded-2xl bg-welve-50 p-3 text-left">
+          {recompensa.imagenUrl ? (
+            <img src={recompensa.imagenUrl} alt="" className="h-11 w-11 flex-shrink-0 rounded-xl object-cover" />
+          ) : (
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-welve-100">
+              <Gift size={18} className="text-welve-500" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-gray-800">{recompensa.nombre}</p>
+            <p className="text-[10px] text-gray-500">Cupón • Ver detalles del cupón</p>
+          </div>
+          <ChevronRight size={16} className="flex-shrink-0 text-welve-400" />
+        </div>
+      )}
+
+      {reto.empresaNombre && (
+        <p className="mb-3 text-[11px] text-gray-400">
+          <span className="font-semibold text-gray-500">¿Cómo completarlo? </span>
+          {comoCompletarlo(reto.condicionTipo, reto.empresaNombre, reto.periodoDias)}
+        </p>
+      )}
+
       {reto.cuponPorReto?.estado === "desbloqueado_pendiente" && (
         <button
-          onClick={onReclamar}
+          onClick={(e) => { e.stopPropagation(); onReclamar?.(); }}
           disabled={reclamando}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-welve-500 px-3 py-2.5 text-xs font-bold text-white transition-transform active:scale-[0.98] disabled:opacity-60"
         >
@@ -104,11 +139,17 @@ export default function RetoCard({ reto, onReclamar, reclamando }: Props) {
         </div>
       )}
 
-      {!reto.cuponPorReto && reto.cuponRecompensaNombre && (
+      {!reto.cuponPorReto && !recompensa && reto.cuponRecompensaNombre && (
         <div className="flex items-center gap-2 rounded-xl bg-welve-50 px-3 py-2 text-xs font-semibold text-welve-700">
           {reto.completado ? <Gift size={14} /> : <Lock size={14} />}
           Ganarás: {reto.cuponRecompensaNombre}
         </div>
+      )}
+
+      {!reto.completado && !reto.cuponPorReto && (
+        <p className="mt-2 text-center text-[10px] font-semibold text-gray-400">
+          Te falta{faltan === 1 ? "" : "n"} {faltan} para completarlo
+        </p>
       )}
     </div>
   );

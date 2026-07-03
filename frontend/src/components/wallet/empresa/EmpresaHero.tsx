@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Camera, Users, Music2, QrCode } from 'lucide-react';
+import { ArrowLeft, Camera, Users, Music2, QrCode } from 'lucide-react';
 
 const GRADIENTE_RUBRO: Record<string, string> = {
   food_beverage: 'from-orange-400 to-yellow-400',
@@ -18,11 +18,20 @@ function socialUrl(kind: 'instagram' | 'facebook' | 'tiktok', value: string): st
 interface Props {
   empresa: any;
   empresaId: string;
+  isAuthenticated?: boolean;
 }
 
-export default function EmpresaHero({ empresa, empresaId }: Props) {
+export default function EmpresaHero({ empresa, empresaId, isAuthenticated }: Props) {
   const navigate = useNavigate();
   const gradiente = GRADIENTE_RUBRO[empresa.rubro] ?? 'from-gray-400 to-slate-600';
+
+  // Vuelve al historial si hay uno propio (ej. viniendo del wallet); si es
+  // acceso directo (link compartido sin sesión) cae a /wallet, igual que
+  // CuponDetallePage.
+  const volver = () => {
+    if (window.history.state?.idx > 0) navigate(-1);
+    else navigate('/wallet');
+  };
 
   return (
     <div>
@@ -36,6 +45,13 @@ export default function EmpresaHero({ empresa, empresaId }: Props) {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+        <button
+          onClick={volver}
+          className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-sm backdrop-blur transition-transform active:scale-95"
+        >
+          <ArrowLeft size={20} />
+        </button>
       </div>
 
       <div className="relative z-10 -mt-10 flex flex-col items-center px-6">
@@ -87,11 +103,11 @@ export default function EmpresaHero({ empresa, empresaId }: Props) {
         </div>
 
         <button
-          onClick={() => navigate(`/wallet/empresa/${empresaId}/mi-qr`)}
+          onClick={() => navigate(isAuthenticated ? `/wallet/empresa/${empresaId}/mi-qr` : `/login?redirect=/wallet/empresa/${empresaId}/mi-qr`)}
           className="flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-gray-900/20 transition-transform active:scale-95"
         >
           <QrCode size={16} />
-          Mostrar mi código
+          {isAuthenticated ? 'Mostrar mi código' : 'Inicia sesión para tu código'}
         </button>
       </div>
     </div>
