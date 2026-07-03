@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Search, ScanBarcode, Package } from "lucide-react";
 import type { Producto } from "../../../api/productos";
 import { productosApi } from "../../../api/productos";
@@ -17,6 +17,11 @@ export default function CatalogoPanel({ onAgregar }: Props) {
   const [categoria, setCategoria] = useState("todas");
   const [scannerOpen, setScannerOpen] = useState(false);
   const toast = useToast();
+  // Detecta un lector de código de barras USB/Bluetooth (actúa como teclado):
+  // 6+ caracteres a menos de 100ms de promedio entre tecla y tecla es
+  // imposible de tipear a mano, así que al ver Enter con ese patrón se trata
+  // como un escaneo en vez de una búsqueda normal.
+  const teclasRapidas = useRef<number[]>([]);
 
   const categorias = [...new Set(productos.map((p) => p.categoria).filter((c): c is string => !!c))];
 
@@ -44,6 +49,28 @@ export default function CatalogoPanel({ onAgregar }: Props) {
     return p.gestionarInventario && p.stockActual <= 0;
   }
 
+  function handleBusquedaKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      const teclas = teclasRapidas.current;
+      teclasRapidas.current = [];
+      if (teclas.length >= 6) {
+        const promedio = (teclas[teclas.length - 1] - teclas[0]) / (teclas.length - 1);
+        if (promedio < 100) {
+          const codigo = busqueda.trim();
+          setBusqueda("");
+          if (codigo) handleCodigo(codigo);
+        }
+      }
+      return;
+    }
+    if (e.key.length === 1) {
+      teclasRapidas.current.push(performance.now());
+    } else if (e.key !== "Shift") {
+      // Backspace, flechas, etc. — tecleo humano normal, reinicia el buffer
+      teclasRapidas.current = [];
+    }
+  }
+
   return (
     <div className="flex h-full flex-col rounded-2xl bg-white p-4 shadow-card">
       {/* Buscador principal */}
@@ -53,6 +80,7 @@ export default function CatalogoPanel({ onAgregar }: Props) {
           <input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
+            onKeyDown={handleBusquedaKeyDown}
             placeholder="Busca por nombre, SKU o escanea código de barras..."
             className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-base outline-none transition-colors focus:border-welve-500 focus:bg-white focus:ring-[3px] focus:ring-welve-500/20"
           />
