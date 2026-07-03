@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Banknote, CreditCard, Smartphone } from "lucide-react";
+import { Banknote, CreditCard, Smartphone, X } from "lucide-react";
 import type { CarritoCalculado } from "../../../api/caja";
 import type { MetodoPagoVenta } from "../../../api/ventas";
 import type { DatosPago } from "../../../hooks/useCaja";
@@ -9,6 +9,8 @@ interface Props {
   disabled: boolean;
   cobrando: boolean;
   onCobrar: (datos: DatosPago) => void;
+  onCancelar: () => void;
+  hayAlgoQueCancelar: boolean;
 }
 
 const METODOS: { value: MetodoPagoVenta; label: string; icon: typeof Banknote }[] = [
@@ -18,9 +20,15 @@ const METODOS: { value: MetodoPagoVenta; label: string; icon: typeof Banknote }[
   { value: "plin", label: "Plin", icon: Smartphone },
 ];
 
-export default function ResumenCobro({ carrito, disabled, cobrando, onCobrar }: Props) {
+export default function ResumenCobro({ carrito, disabled, cobrando, onCobrar, onCancelar, hayAlgoQueCancelar }: Props) {
   const [metodo, setMetodo] = useState<MetodoPagoVenta | null>(null);
   const [montoRecibido, setMontoRecibido] = useState("");
+  const [confirmandoCancelar, setConfirmandoCancelar] = useState(false);
+
+  function handleCancelar() {
+    setConfirmandoCancelar(false);
+    onCancelar();
+  }
 
   const total = carrito?.total ?? 0;
   const recibido = parseFloat(montoRecibido) || 0;
@@ -95,6 +103,35 @@ export default function ResumenCobro({ carrito, disabled, cobrando, onCobrar }: 
       >
         {cobrando ? "Procesando..." : `Cobrar S/ ${total.toFixed(2)}`}
       </button>
+
+      {hayAlgoQueCancelar && (
+        confirmandoCancelar ? (
+          <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-2.5">
+            <span className="flex-1 text-xs font-semibold text-red-600">¿Cancelar toda la compra?</span>
+            <button
+              onClick={() => setConfirmandoCancelar(false)}
+              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-500 hover:bg-white"
+            >
+              No
+            </button>
+            <button
+              onClick={handleCancelar}
+              disabled={cobrando}
+              className="rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+            >
+              Sí, cancelar
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmandoCancelar(true)}
+            disabled={cobrando}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+          >
+            <X size={13} /> Cancelar compra
+          </button>
+        )
+      )}
     </div>
   );
 }

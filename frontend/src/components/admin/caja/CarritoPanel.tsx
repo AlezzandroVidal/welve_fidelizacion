@@ -47,7 +47,11 @@ export default function CarritoPanel({ caja, carrito, cobrando, onCobrar }: Prop
 
       {/* Fijo abajo — pago y cobro siempre visibles, nunca se comprime */}
       <div className="flex-shrink-0 border-t border-gray-100 p-4">
-        <ResumenCobro carrito={carrito} disabled={caja.items.length === 0} cobrando={cobrando} onCobrar={onCobrar} />
+        <ResumenCobro
+          carrito={carrito} disabled={caja.items.length === 0} cobrando={cobrando} onCobrar={onCobrar}
+          onCancelar={caja.limpiarCaja}
+          hayAlgoQueCancelar={caja.items.length > 0 || !!caja.cliente}
+        />
       </div>
     </div>
   );
