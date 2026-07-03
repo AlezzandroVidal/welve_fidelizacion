@@ -67,13 +67,19 @@ export default function CuponCard({ cupon, onVerQR }: Props) {
           <span className="text-2xl font-black leading-none">{valor}</span>{' '}
           <span className="text-xs font-bold uppercase opacity-90">{label}</span>
         </div>
-        {/* Efecto ticket: borde inferior en zig-zag */}
+        {/* Efecto ticket: perforado con muescas semicirculares suaves, no
+            triángulos — mask-image "muerde" círculos del borde superior de
+            esta franja blanca en vez de recortar zig-zags filosos. */}
         <div
-          className="absolute -bottom-1 left-0 right-0 h-3 bg-white"
+          className="absolute -bottom-1 left-0 right-0 h-4 bg-white"
           style={{
-            clipPath:
-              'polygon(0% 100%, 8% 0%, 16% 100%, 24% 0%, 32% 100%, 40% 0%, 48% 100%, 56% 0%, 64% 100%, 72% 0%, 80% 100%, 88% 0%, 96% 100%, 100% 0%, 100% 100%, 0% 100%)',
-          }}
+            maskImage: 'radial-gradient(circle 6px at 10px 0px, transparent 6px, black 6.5px)',
+            maskSize: '20px 100%',
+            maskRepeat: 'repeat-x',
+            WebkitMaskImage: 'radial-gradient(circle 6px at 10px 0px, transparent 6px, black 6.5px)',
+            WebkitMaskSize: '20px 100%',
+            WebkitMaskRepeat: 'repeat-x',
+          } as React.CSSProperties}
         />
       </div>
 
