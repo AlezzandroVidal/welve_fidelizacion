@@ -21,6 +21,9 @@ from app.routers import (
     qr,
     staff,
     resenas,
+    pagos,
+    productos,
+    ventas,
 )
 
 
@@ -60,3 +63,6 @@ app.include_router(wallet.router, prefix="/api/v1/wallet")
 app.include_router(qr.router, prefix="/api/v1")
 app.include_router(staff.router, prefix="/api/v1")
 app.include_router(resenas.router, prefix="/api/v1")
+app.include_router(pagos.router, prefix="/api/v1")
+app.include_router(productos.router, prefix="/api/v1")
+app.include_router(ventas.router, prefix="/api/v1")

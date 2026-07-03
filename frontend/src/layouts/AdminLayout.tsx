@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import {
   LayoutDashboard, Ticket, CheckSquare, Users,
-  Target, Crown, Settings, Menu, User, QrCode, ScanLine, Star,
+  Target, Crown, Settings, Menu, User, QrCode, ScanLine, Star, CreditCard,
+  ShoppingCart, Receipt, Package, Warehouse,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useEmpresaMe } from "../hooks/useEmpresa";
 import { useCupones } from "../hooks/useCupones";
 import { useClientes } from "../hooks/useClientes";
+import { useAlertasStock } from "../hooks/useProductos";
 import Sidebar, { SIDEBAR_W, SIDEBAR_W_COLLAPSED, type SidebarNavGroup } from "../components/layout/Sidebar";
 
 const PLAN_LABEL: Record<string, string> = {
@@ -33,6 +35,7 @@ export default function AdminLayout() {
   const { data: empresa } = useEmpresaMe();
   const { data: cupones } = useCupones();
   const { data: clientes } = useClientes();
+  const { data: alertasStock } = useAlertasStock();
 
   const [collapsed,  setCollapsed]  = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -47,10 +50,19 @@ export default function AdminLayout() {
       items: [
         { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
         { to: "/admin/staff",     icon: ScanLine,        label: "Registrar" },
-        { to: "/admin/cupones",   icon: Ticket,          label: "Cupones", badge: cuponesActivos },
-        { to: "/admin/canjes",    icon: CheckSquare,     label: "Canjes" },
         { to: "/admin/clientes",  icon: Users,           label: "Clientes", badge: clientes?.length },
         { to: "/admin/qr",        icon: QrCode,          label: "Mis QR Codes" },
+      ],
+    },
+    {
+      label: "Ventas",
+      items: [
+        { to: "/admin/caja",       icon: ShoppingCart, label: "Caja" },
+        { to: "/admin/ventas",     icon: Receipt,       label: "Ventas" },
+        { to: "/admin/productos",  icon: Package,       label: "Productos" },
+        { to: "/admin/inventario", icon: Warehouse,     label: "Inventario", badge: alertasStock?.length },
+        { to: "/admin/cupones",    icon: Ticket,        label: "Cupones", badge: cuponesActivos },
+        { to: "/admin/canjes",     icon: CheckSquare,   label: "Canjes" },
       ],
     },
     {
@@ -63,7 +75,10 @@ export default function AdminLayout() {
     },
     {
       label: "Sistema",
-      items: [{ to: "/admin/config", icon: Settings, label: "Configuración" }],
+      items: [
+        { to: "/admin/pagos",  icon: CreditCard, label: "Suscripción" },
+        { to: "/admin/config", icon: Settings,   label: "Configuración" },
+      ],
     },
   ];
 

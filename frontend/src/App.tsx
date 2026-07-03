@@ -16,6 +16,11 @@ import ConfigPage from "./pages/admin/ConfigPage";
 import QRPage from "./pages/admin/QRPage";
 import StaffPage from "./pages/admin/StaffPage";
 import ResenasPage from "./pages/admin/ResenasPage";
+import PagosPage from "./pages/admin/PagosPage";
+import CajaPage from "./pages/admin/CajaPage";
+import VentasPage from "./pages/admin/VentasPage";
+import ProductosPage from "./pages/admin/ProductosPage";
+import InventarioPage from "./pages/admin/InventarioPage";
 import QRVisitaPage from "./pages/qr/QRVisitaPage";
 import QRCuponPage from "./pages/qr/QRCuponPage";
 import WalletLayout from "./layouts/WalletLayout";
@@ -25,6 +30,8 @@ import MisCuponesPage from "./pages/wallet/MisCuponesPage";
 import HistorialPage from "./pages/wallet/HistorialPage";
 import PerfilPage from "./pages/wallet/PerfilPage";
 import MiQRPage from "./pages/wallet/MiQRPage";
+import CuponDetallePage from "./pages/wallet/CuponDetallePage";
+import MisRetosPage from "./pages/wallet/MisRetosPage";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +66,11 @@ export default function App() {
               <Route path="qr"        element={<QRPage />} />
               <Route path="staff"     element={<StaffPage />} />
               <Route path="resenas"   element={<ResenasPage />} />
+              <Route path="pagos"     element={<PagosPage />} />
+              <Route path="caja"       element={<CajaPage />} />
+              <Route path="ventas"     element={<VentasPage />} />
+              <Route path="productos"  element={<ProductosPage />} />
+              <Route path="inventario" element={<InventarioPage />} />
             </Route>
 
             {/* QR — pantallas fullscreen sin sidebar */}
@@ -85,9 +97,13 @@ export default function App() {
               <Route index element={<InicioPage />} />
               <Route path="empresa/:id" element={<EmpresaDetallePage />} />
               <Route path="mis-cupones" element={<MisCuponesPage />} />
+              <Route path="mis-retos" element={<MisRetosPage />} />
               <Route path="historial" element={<HistorialPage />} />
               <Route path="perfil" element={<PerfilPage />} />
             </Route>
+
+            {/* Detalle de cupón — PÚBLICA, compartible sin sesión; solo el canje requiere login */}
+            <Route path="/wallet/cupon/:cuponId" element={<CuponDetallePage />} />
 
             {/* Mi código — pantalla fullscreen sin sidebar, el cliente la muestra al staff */}
             <Route
