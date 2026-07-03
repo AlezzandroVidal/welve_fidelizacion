@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X, Info, Percent, Package, Eye, Calendar } from "lucide-react";
+import { X } from "lucide-react";
 import type {
   AccesoVisibilidad, AplicaCupon, Cupon, CreateCuponDto, TipoCupon, TipoRequisito, UpdateCuponDto,
 } from "../../../api/cupones";
@@ -14,10 +14,6 @@ import TabVisibilidad from "./TabVisibilidad";
 import TabVigencia from "./TabVigencia";
 import { cuponFormSchema, TABS_CUPON, CAMPOS_POR_TAB, type CuponFormData, type TabIdCupon } from "./cuponFormSchema";
 import { buildCamposComunes, toIso } from "./buildCuponPayload";
-
-const TAB_ICONS: Record<TabIdCupon, React.ElementType> = {
-  basico: Info, descuento: Percent, productos: Package, visibilidad: Eye, vigencia: Calendar,
-};
 
 function toDateStr(iso: string) { return iso.slice(0, 10); }
 
@@ -42,6 +38,7 @@ export default function CuponModal({ open, cupon, onClose, onSuccess }: Props) {
   const [productosValidos, setProductosValidos] = useState<string[]>(cupon?.productosValidos ?? []);
   const [categoriasValidas, setCategoriasValidas] = useState<string[]>(cupon?.categoriasValidas ?? []);
   const [productoGratisId, setProductoGratisId] = useState(cupon?.productoGratisId ?? "");
+  const [requisitoProductoObjetivoId, setRequisitoProductoObjetivoId] = useState(cupon?.requisito?.producto_objetivo_id ?? "");
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CuponFormData>({
     resolver: zodResolver(cuponFormSchema),
@@ -64,6 +61,7 @@ export default function CuponModal({ open, cupon, onClose, onSuccess }: Props) {
           requisito_tipo:          cupon.requisito?.tipo ?? "",
           requisito_valor:         cupon.requisito?.valor?.toString() ?? "",
           requisito_periodo_dias:  cupon.requisito?.periodo_dias?.toString() ?? "",
+          requisito_categoria_objetivo: cupon.requisito?.categoria_objetivo ?? "",
           notificar_al_desbloquear:cupon.notificarAlDesbloquear,
           mensaje_notificacion:    cupon.mensajeNotificacion ?? "",
           destacado:               cupon.destacado,
@@ -93,6 +91,7 @@ export default function CuponModal({ open, cupon, onClose, onSuccess }: Props) {
   async function onSubmit(d: CuponFormData) {
     const camposComunes = buildCamposComunes(d, {
       imagen, tags, colorTema, aplicaA, productosValidos, categoriasValidas, productoGratisId,
+      requisitoProductoObjetivoId,
     });
 
     if (isEdit && cupon) {
@@ -120,32 +119,28 @@ export default function CuponModal({ open, cupon, onClose, onSuccess }: Props) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
       <div
-        className="relative z-10 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl
-          animate-fade-up sm:animate-scale-in flex flex-col"
+        className="relative z-10 flex w-full flex-col sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl
+          animate-fade-up sm:animate-scale-in"
         style={{ maxHeight: "92dvh" }}
       >
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="text-base font-bold text-gray-900">{isEdit ? "Editar cupón" : "Nuevo cupón"}</h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:scale-95">
             <X size={18} />
           </button>
         </div>
 
-        <div className="flex gap-1 overflow-x-auto border-b border-gray-100 px-3 pt-2">
-          {TABS_CUPON.map((t) => {
-            const Icon = TAB_ICONS[t.id];
-            return (
-              <button
-                key={t.id} type="button" onClick={() => setTab(t.id)}
-                className={`relative flex shrink-0 items-center gap-1.5 rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                  tab === t.id ? "bg-welve-50 text-welve-700" : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                <Icon size={14} /> {t.label}
-                {tabTieneError(t.id) && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />}
-              </button>
-            );
-          })}
+        <div className="flex flex-shrink-0 gap-1 overflow-x-auto border-b border-gray-100 px-5 pt-3">
+          {TABS_CUPON.map((t) => (
+            <button
+              key={t.id} type="button" onClick={() => setTab(t.id)}
+              className={`relative shrink-0 rounded-t-lg px-3.5 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px
+                ${tab === t.id ? "border-welve-500 text-welve-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+            >
+              {t.label}
+              {tabTieneError(t.id) && <span className="absolute right-1 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />}
+            </button>
+          ))}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-hidden">
@@ -186,6 +181,8 @@ export default function CuponModal({ open, cupon, onClose, onSuccess }: Props) {
                 register={register} errors={errors} visibilidad={visibilidad}
                 onVisibilidadChange={(v) => setValue("visibilidad", v)}
                 requisitoTipo={requisitoTipo}
+                requisitoProductoObjetivoId={requisitoProductoObjetivoId}
+                onRequisitoProductoObjetivoChange={setRequisitoProductoObjetivoId}
               />
             )}
 
@@ -194,7 +191,7 @@ export default function CuponModal({ open, cupon, onClose, onSuccess }: Props) {
             )}
           </div>
 
-          <div className="flex gap-4 border-t border-gray-100 p-6 pt-4">
+          <div className="flex flex-shrink-0 gap-4 border-t border-gray-100 p-5">
             <button type="button" onClick={onClose}
               className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 active:scale-[0.97]">
               Cancelar

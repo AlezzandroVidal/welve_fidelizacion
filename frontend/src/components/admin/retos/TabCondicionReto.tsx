@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import { Footprints, CalendarClock, Wallet, TrendingUp, ShoppingBag, Star, Search, X } from "lucide-react";
+import { Footprints, CalendarClock, Wallet, TrendingUp, ShoppingBag, Star, Tags, Search, X } from "lucide-react";
 import { Input, SelectField } from "../../ui";
 import { useProductos } from "../../../hooks/useProductos";
 import type { TipoReto } from "../../../api/retos";
@@ -13,9 +13,11 @@ const TIPOS: { value: TipoReto; label: string; hint: string; icon: React.ReactEl
   { value: "monto_en_periodo",   label: "Gasto en período",  hint: "Gasta S/X en Y días",            icon: <TrendingUp size={18} /> },
   { value: "productos_comprados",label: "Productos comprados", hint: "Compra X unidades de un producto", icon: <ShoppingBag size={18} /> },
   { value: "puntos_acumulados",  label: "Puntos acumulados", hint: "Acumula X puntos",               icon: <Star size={18} /> },
+  { value: "monto_en_productos", label: "Gasto en productos", hint: "Gasta S/X en un producto/categoría", icon: <Tags size={18} /> },
 ];
 
-const CON_PERIODO: TipoReto[] = ["visitas_en_periodo", "monto_en_periodo"];
+const CON_PERIODO: TipoReto[] = ["visitas_en_periodo", "monto_en_periodo", "monto_en_productos"];
+const CON_PRODUCTO: TipoReto[] = ["productos_comprados", "monto_en_productos"];
 
 interface Props {
   register: UseFormRegister<RetoFormData>;
@@ -74,14 +76,14 @@ export default function TabCondicionReto({
           <Input
             {...register("periodo_dias")}
             type="number" min="1"
-            label="Período (días)"
-            placeholder="Ej. 30"
+            label={tipo === "monto_en_productos" ? "Período (días) — opcional" : "Período (días)"}
+            placeholder={tipo === "monto_en_productos" ? "Sin límite de tiempo" : "Ej. 30"}
             error={errors.periodo_dias?.message}
           />
         )}
       </div>
 
-      {tipo === "productos_comprados" && (
+      {CON_PRODUCTO.includes(tipo) && (
         <div>
           <span className="mb-1.5 block text-xs font-semibold text-gray-600">Producto objetivo</span>
           {productoSel ? (
@@ -122,6 +124,12 @@ export default function TabCondicionReto({
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </SelectField>
+          {tipo === "monto_en_productos" && (
+            <p className="mt-2 text-[11px] text-gray-400">
+              Solo cuenta compras hechas desde el módulo de Caja — una visita registrada
+              por staff sin venta asociada no queda incluida.
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -11,12 +11,16 @@ export type TipoCupon =
 export type EstadoCupon = "activo" | "pausado" | "expirado";
 export type AplicaCupon = "todo" | "productos_especificos" | "categoria";
 export type AccesoVisibilidad = "publico" | "vip" | "por_reto" | "por_requisito" | "privado";
-export type TipoRequisito = "visitas_totales" | "visitas_en_periodo" | "gasto_total" | "gasto_en_periodo" | "puntos_acumulados";
+export type TipoRequisito =
+  | "visitas_totales" | "visitas_en_periodo" | "gasto_total" | "gasto_en_periodo"
+  | "puntos_acumulados" | "gasto_en_productos";
 
 export interface RequisitoAcceso {
   tipo: TipoRequisito;
   valor: number;
   periodo_dias: number | null;
+  producto_objetivo_id?: string | null;
+  categoria_objetivo?: string | null;
 }
 
 export interface Cupon {

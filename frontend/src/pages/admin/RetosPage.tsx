@@ -46,10 +46,12 @@ const CONDICION_LABEL: Record<Reto["condicionTipo"], string> = {
   monto_en_periodo: "Monto en período",
   productos_comprados: "Productos comprados",
   puntos_acumulados: "Puntos acumulados",
+  monto_en_productos: "Gasto en productos/categoría",
 };
 
 function condicionResumen(reto: Reto): { valor: string; label: string } {
-  const esMonto = reto.condicionTipo === "monto_acumulado" || reto.condicionTipo === "monto_en_periodo";
+  const esMonto = reto.condicionTipo === "monto_acumulado" || reto.condicionTipo === "monto_en_periodo"
+    || reto.condicionTipo === "monto_en_productos";
   const valor = esMonto ? `S/ ${reto.condicionValor}` : `${reto.condicionValor}`;
   const sufijoPeriodo = reto.periodoDias ? ` / ${reto.periodoDias}d` : "";
   return { valor: `${valor}${sufijoPeriodo}`, label: CONDICION_LABEL[reto.condicionTipo] };

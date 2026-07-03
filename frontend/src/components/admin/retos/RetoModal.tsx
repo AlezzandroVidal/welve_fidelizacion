@@ -1,17 +1,14 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X, Target, Info, Gift, Calendar } from "lucide-react";
-import { useCreateReto, useUpdateReto } from "../../../hooks/useRetos";
+import { X } from "lucide-react";
+import { useCreateReto, useUpdateReto, useAsignarCuponesReto } from "../../../hooks/useRetos";
+import { useCupones } from "../../../hooks/useCupones";
 import { Input, DateField, Checkbox } from "../../ui";
 import TabCondicionReto from "./TabCondicionReto";
 import TabRecompensaReto from "./TabRecompensaReto";
 import { retoFormSchema, CON_PERIODO, TABS_RETO, type RetoFormData, type TabIdReto } from "./retoFormSchema";
 import type { Reto, TipoReto } from "../../../api/retos";
-
-const TAB_ICONS: Record<TabIdReto, React.ElementType> = {
-  info: Info, condicion: Target, recompensa: Gift, vigencia: Calendar,
-};
 
 function toDateInput(iso: string) { return iso.slice(0, 10); }
 function toIso(date: string) { return `${date}T00:00:00`; }
@@ -28,10 +25,26 @@ export default function RetoModal({ open, reto, onClose, onSuccess, onError }: P
   const isEdit = !!reto;
   const createReto = useCreateReto();
   const updateReto = useUpdateReto();
-  const pending = createReto.isPending || updateReto.isPending;
+  const asignarCupones = useAsignarCuponesReto();
+  const pending = createReto.isPending || updateReto.isPending || asignarCupones.isPending;
+
+  const { data: cupones } = useCupones();
 
   const [tab, setTab] = useState<TabIdReto>("info");
   const [productoObjetivoId, setProductoObjetivoId] = useState(reto?.productoObjetivoId ?? "");
+  const [cuponesAsignados, setCuponesAsignados] = useState<string[]>([]);
+
+  // cupones se carga async — si el modal se abre antes de que resuelva, no
+  // podemos preseleccionar los ya asignados desde el useState inicial (se
+  // guardaría [] y el submit los desvincularía por error). Se sincroniza una
+  // sola vez apenas los datos están listos, para no pisar selecciones que el
+  // usuario ya haya tocado a mano después.
+  const sincronizado = useRef(false);
+  useEffect(() => {
+    if (sincronizado.current || !cupones || !isEdit) return;
+    setCuponesAsignados(cupones.filter((c) => c.retoId === reto?.id).map((c) => c.id));
+    sincronizado.current = true;
+  }, [cupones, isEdit, reto?.id]);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RetoFormData>({
     resolver: zodResolver(retoFormSchema),
@@ -70,22 +83,26 @@ export default function RetoModal({ open, reto, onClose, onSuccess, onError }: P
       mensaje_completado: d.mensaje_completado?.trim() || null,
     };
     try {
+      let retoId = reto?.id;
       if (isEdit && reto) {
         await updateReto.mutateAsync({
           id: reto.id,
           data: { nombre: d.nombre, fecha_fin: toIso(d.fecha_fin), ...payload },
         });
-        onSuccess("Reto actualizado correctamente");
       } else {
-        await createReto.mutateAsync({
+        const creado = await createReto.mutateAsync({
           nombre: d.nombre,
           condicion_tipo: tipo,
           fecha_inicio: toIso(d.fecha_inicio),
           fecha_fin: toIso(d.fecha_fin),
           ...payload,
         });
-        onSuccess("Reto creado correctamente");
+        retoId = creado.id;
       }
+      if (retoId) {
+        await asignarCupones.mutateAsync({ id: retoId, cuponIds: cuponesAsignados });
+      }
+      onSuccess(isEdit ? "Reto actualizado correctamente" : "Reto creado correctamente");
       onClose();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -96,34 +113,27 @@ export default function RetoModal({ open, reto, onClose, onSuccess, onError }: P
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative z-10 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl animate-fade-up sm:animate-scale-in"
-        style={{ maxHeight: "92dvh", display: "flex", flexDirection: "column" }}>
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-welve-100">
-              <Target size={16} className="text-welve-600" />
-            </div>
-            <h2 className="text-base font-bold text-gray-900">{isEdit ? "Editar reto" : "Nuevo reto"}</h2>
-          </div>
+      <div
+        className="relative z-10 flex w-full flex-col sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl animate-fade-up sm:animate-scale-in"
+        style={{ maxHeight: "92dvh" }}
+      >
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
+          <h2 className="text-base font-bold text-gray-900">{isEdit ? "Editar reto" : "Nuevo reto"}</h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:scale-95">
             <X size={18} />
           </button>
         </div>
 
-        <div className="flex gap-1 overflow-x-auto border-b border-gray-100 px-3 pt-2">
-          {TABS_RETO.map((t) => {
-            const Icon = TAB_ICONS[t.id];
-            return (
-              <button
-                key={t.id} type="button" onClick={() => setTab(t.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-t-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                  tab === t.id ? "bg-welve-50 text-welve-700" : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                <Icon size={14} /> {t.label}
-              </button>
-            );
-          })}
+        <div className="flex flex-shrink-0 gap-1 overflow-x-auto border-b border-gray-100 px-5 pt-3">
+          {TABS_RETO.map((t) => (
+            <button
+              key={t.id} type="button" onClick={() => setTab(t.id)}
+              className={`shrink-0 rounded-t-lg px-3.5 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px
+                ${tab === t.id ? "border-welve-500 text-welve-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col overflow-hidden">
@@ -146,7 +156,12 @@ export default function RetoModal({ open, reto, onClose, onSuccess, onError }: P
                 disabled={isEdit}
               />
             )}
-            {tab === "recompensa" && <TabRecompensaReto register={register} errors={errors} />}
+            {tab === "recompensa" && (
+              <TabRecompensaReto
+                register={register} errors={errors}
+                cuponesAsignados={cuponesAsignados} onCuponesAsignadosChange={setCuponesAsignados}
+              />
+            )}
             {tab === "vigencia" && (
               <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
@@ -158,7 +173,7 @@ export default function RetoModal({ open, reto, onClose, onSuccess, onError }: P
             )}
           </div>
 
-          <div className="flex gap-4 border-t border-gray-100 p-6 pt-4">
+          <div className="flex flex-shrink-0 gap-4 border-t border-gray-100 p-5">
             <button type="button" onClick={onClose}
               className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors active:scale-[0.97]">
               Cancelar

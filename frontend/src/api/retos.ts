@@ -6,7 +6,8 @@ export type TipoReto =
   | "monto_acumulado"
   | "monto_en_periodo"
   | "productos_comprados"
-  | "puntos_acumulados";
+  | "puntos_acumulados"
+  | "monto_en_productos";
 
 export interface Reto {
   id: string;
@@ -65,4 +66,8 @@ export const retosApi = {
   update: (id: string, data: UpdateRetoDto) => api.patch<Reto>(`/retos/${id}`, data),
   cancelar: (id: string) => api.post<Reto>(`/retos/${id}/cancelar`),
   reactivar: (id: string) => api.post<Reto>(`/retos/${id}/reactivar`),
+  /** Reemplaza el set completo de cupones visibilidad=por_reto ligados a
+   * este reto — un reto puede desbloquear varios cupones a la vez. */
+  asignarCupones: (id: string, cuponIds: string[]) =>
+    api.put<string[]>(`/retos/${id}/cupones`, { cupon_ids: cuponIds }),
 };

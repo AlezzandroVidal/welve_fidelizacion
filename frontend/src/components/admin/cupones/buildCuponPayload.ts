@@ -11,6 +11,7 @@ interface ContextoExtra {
   productosValidos: string[];
   categoriasValidas: string[];
   productoGratisId: string;
+  requisitoProductoObjetivoId: string;
 }
 
 /** Campos compartidos por CreateCuponDto y UpdateCuponDto — se arma una sola
@@ -22,6 +23,8 @@ export function buildCamposComunes(d: CuponFormData, ctx: ContextoExtra) {
         tipo: d.requisito_tipo as TipoRequisito,
         valor: parseFloat(d.requisito_valor || "0"),
         periodo_dias: d.requisito_periodo_dias ? parseInt(d.requisito_periodo_dias) : null,
+        producto_objetivo_id: d.requisito_tipo === "gasto_en_productos" ? (ctx.requisitoProductoObjetivoId || null) : null,
+        categoria_objetivo: d.requisito_tipo === "gasto_en_productos" ? (d.requisito_categoria_objetivo?.trim() || null) : null,
       }
     : null;
 

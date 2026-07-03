@@ -18,6 +18,7 @@ export const cuponFormSchema = z.object({
   requisito_tipo:          z.string().optional(),
   requisito_valor:         z.string().optional(),
   requisito_periodo_dias:  z.string().optional(),
+  requisito_categoria_objetivo: z.string().optional(),
   notificar_al_desbloquear:z.boolean().optional(),
   mensaje_notificacion:    z.string().optional(),
   destacado:               z.boolean().optional(),
@@ -43,9 +44,9 @@ export const cuponFormSchema = z.object({
   if (d.fecha_inicio && d.fecha_expiracion && d.fecha_expiracion <= d.fecha_inicio) {
     ctx.addIssue({ code: "custom", message: "Debe ser posterior a la fecha inicio", path: ["fecha_expiracion"] });
   }
-  if (d.visibilidad === "por_reto" && !d.reto_id) {
-    ctx.addIssue({ code: "custom", message: "Selecciona un reto", path: ["reto_id"] });
-  }
+  // visibilidad=por_reto NO exige reto_id acá — un cupón puede crearse "a la
+  // espera" de que se le asigne un reto desde RetoModal (pestaña "Cupones
+  // que desbloquea"), el flujo principal cuando el reto todavía no existe.
   if (d.visibilidad === "por_requisito") {
     if (!d.requisito_tipo) ctx.addIssue({ code: "custom", message: "Selecciona un tipo", path: ["requisito_tipo"] });
     if (!d.requisito_valor || !parseFloat(d.requisito_valor)) {
@@ -69,6 +70,6 @@ export const CAMPOS_POR_TAB: Record<TabIdCupon, string[]> = {
   basico:      ["nombre", "codigo", "descripcion_larga"],
   descuento:   ["valor", "cantidad_paga", "cantidad_lleva", "monto_minimo"],
   productos:   ["monto_minimo_carrito"],
-  visibilidad: ["reto_id", "requisito_tipo", "requisito_valor", "requisito_periodo_dias"],
+  visibilidad: ["reto_id", "requisito_tipo", "requisito_valor", "requisito_periodo_dias", "requisito_categoria_objetivo"],
   vigencia:    ["fecha_inicio", "fecha_expiracion", "limite_usos_total", "limite_usos_por_cliente"],
 };

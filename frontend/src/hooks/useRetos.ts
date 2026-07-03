@@ -39,3 +39,15 @@ export function useReactivarReto() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["retos", "list"] }),
   });
 }
+
+export function useAsignarCuponesReto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, cuponIds }: { id: string; cuponIds: string[] }) =>
+      retosApi.asignarCupones(id, cuponIds).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["retos", "list"] });
+      qc.invalidateQueries({ queryKey: ["cupones", "list"] });
+    },
+  });
+}
