@@ -32,6 +32,7 @@ out/
 
 # Environment variables
 .env
+.env.production
 .env.local
 .env.*.local
 !.env.example

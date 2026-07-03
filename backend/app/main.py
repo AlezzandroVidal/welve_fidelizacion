@@ -43,6 +43,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
+    # Cubre cualquier subdominio de Railway (cada deploy/preview genera uno
+    # distinto, ej. welve-frontend-production.up.railway.app) y de Codespaces
+    # (preview de puertos en desarrollo), sin tener que listarlos a mano en
+    # CORS_ORIGINS cada vez.
+    allow_origin_regex=r"https://.*\.up\.railway\.app|https://.*\.app\.github\.dev",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
