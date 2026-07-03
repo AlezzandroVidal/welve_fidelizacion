@@ -71,9 +71,12 @@ function descargarCSV(ventas: Venta[]) {
   URL.revokeObjectURL(url);
 }
 
+const HIDDEN_MOBILE = "hidden sm:table-cell";
+
 const TABLE_COLS = [
-  { label: "#" }, { label: "Hora" }, { label: "Cliente" }, { label: "Items" },
-  { label: "Descuento" }, { label: "IGV" }, { label: "Total" }, { label: "Método" }, { label: "Cupón" },
+  { label: "#", className: HIDDEN_MOBILE }, { label: "Hora" }, { label: "Cliente" }, { label: "Items", className: HIDDEN_MOBILE },
+  { label: "Descuento", className: HIDDEN_MOBILE }, { label: "IGV", className: HIDDEN_MOBILE },
+  { label: "Total" }, { label: "Método" }, { label: "Cupón", className: HIDDEN_MOBILE },
 ];
 
 export default function VentasPage() {
@@ -92,9 +95,9 @@ export default function VentasPage() {
   const { data: resumen } = useResumenVentas();
 
   return (
-    <main className="space-y-6 p-6">
+    <main className="space-y-6 p-4 sm:p-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-welve-100">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-welve-100">
           <Receipt size={20} className="text-welve-600" />
         </div>
         <div>
@@ -104,7 +107,7 @@ export default function VentasPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <div className="rounded-2xl bg-white p-4 shadow-card">
           <p className="text-2xl font-bold tabular-nums text-gray-900">S/ {(resumen?.montoHoy ?? 0).toFixed(2)}</p>
           <p className="text-xs text-gray-400">{resumen?.ventasHoy ?? 0} ventas hoy</p>
@@ -144,17 +147,17 @@ export default function VentasPage() {
           <Table.Body>
             {ventas.map((v, i) => (
               <Table.Row key={v.id} onClick={() => setDetalle(v)}>
-                <Table.Cell className="text-xs text-gray-400">{i + 1}</Table.Cell>
+                <Table.Cell className={`text-xs text-gray-400 ${HIDDEN_MOBILE}`}>{i + 1}</Table.Cell>
                 <Table.Cell className="text-sm text-gray-700">
                   {new Date(v.createdAt).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </Table.Cell>
                 <Table.Cell className="text-sm text-gray-700">{v.clienteNombre ?? "—"}</Table.Cell>
-                <Table.Cell className="text-sm tabular-nums text-gray-600">{v.items.reduce((a, item) => a + item.cantidad, 0)}</Table.Cell>
-                <Table.Cell className="text-sm tabular-nums text-green-600">{v.descuentoMonto > 0 ? `-S/ ${v.descuentoMonto.toFixed(2)}` : "—"}</Table.Cell>
-                <Table.Cell className="text-sm tabular-nums text-gray-600">S/ {v.igv.toFixed(2)}</Table.Cell>
+                <Table.Cell className={`text-sm tabular-nums text-gray-600 ${HIDDEN_MOBILE}`}>{v.items.reduce((a, item) => a + item.cantidad, 0)}</Table.Cell>
+                <Table.Cell className={`text-sm tabular-nums text-green-600 ${HIDDEN_MOBILE}`}>{v.descuentoMonto > 0 ? `-S/ ${v.descuentoMonto.toFixed(2)}` : "—"}</Table.Cell>
+                <Table.Cell className={`text-sm tabular-nums text-gray-600 ${HIDDEN_MOBILE}`}>S/ {v.igv.toFixed(2)}</Table.Cell>
                 <Table.Cell className="text-sm font-bold tabular-nums text-gray-900">S/ {v.total.toFixed(2)}</Table.Cell>
                 <Table.Cell><Badge color="gray" size="sm">{METODO_LABEL[v.metodoPago] ?? v.metodoPago}</Badge></Table.Cell>
-                <Table.Cell className="text-xs text-gray-500">{v.cuponCodigo ?? "—"}</Table.Cell>
+                <Table.Cell className={`text-xs text-gray-500 ${HIDDEN_MOBILE}`}>{v.cuponCodigo ?? "—"}</Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>

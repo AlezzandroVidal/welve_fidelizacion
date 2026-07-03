@@ -42,7 +42,7 @@ export default function CajaPage() {
   }
 
   return (
-    <main className="flex h-[calc(100vh-2rem)] flex-col gap-4 bg-welve-50 p-4 text-base lg:flex-row">
+    <main className="flex h-[calc(100vh-5.5rem)] flex-col gap-4 bg-welve-50 p-4 text-base md:h-[calc(100vh-2rem)] lg:flex-row">
       {/* Tabs mobile */}
       <div className="flex gap-2 lg:hidden">
         {[

@@ -14,7 +14,7 @@ function Root({ children, className = "" }: { children: ReactNode; className?: s
   );
 }
 
-function Header({ cols }: { cols: Array<{ label: string; sortable?: boolean; sorted?: "asc" | "desc" | null; onSort?: () => void }> }) {
+function Header({ cols }: { cols: Array<{ label: string; sortable?: boolean; sorted?: "asc" | "desc" | null; onSort?: () => void; className?: string }> }) {
   return (
     <thead>
       <tr className="border-b border-gray-100 bg-[#F5F3FF]">
@@ -25,6 +25,7 @@ function Header({ cols }: { cols: Array<{ label: string; sortable?: boolean; sor
             className={[
               "px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider",
               col.sortable ? "cursor-pointer select-none hover:text-welve-600 transition-colors" : "",
+              col.className ?? "",
             ].join(" ")}
           >
             <span className="inline-flex items-center gap-1">

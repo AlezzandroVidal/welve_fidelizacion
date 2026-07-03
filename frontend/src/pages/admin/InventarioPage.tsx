@@ -15,6 +15,8 @@ const TIPO_OPTIONS = [
   ...Object.entries(MOVIMIENTO_LABEL).map(([value, label]) => ({ value, label })),
 ];
 
+const HIDDEN_MOBILE = "hidden sm:table-cell";
+
 function StatTile({ icon: Icon, color, label, value }: { icon: typeof Package; color: string; label: string; value: string | number }) {
   return (
     <div className="rounded-2xl bg-white p-4 shadow-card flex items-center gap-3">
@@ -48,9 +50,9 @@ export default function InventarioPage() {
   const productoOptions = [{ value: "todos", label: "Todos los productos" }, ...productos.map((p) => ({ value: p.id, label: p.nombre }))];
 
   return (
-    <main className="space-y-6 p-6">
+    <main className="space-y-6 p-4 sm:p-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-welve-100">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-welve-100">
           <Warehouse size={20} className="text-welve-600" />
         </div>
         <div>
@@ -59,7 +61,7 @@ export default function InventarioPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatTile icon={Package} color="#7C5CFC" label="Productos activos" value={productosActivos.length} />
         <StatTile icon={DollarSign} color="#3FD17A" label="Valor de inventario" value={`S/ ${valorInventario.toFixed(2)}`} />
         <StatTile icon={AlertTriangle} color="#EF4444" label="Agotados" value={agotados} />
@@ -75,11 +77,11 @@ export default function InventarioPage() {
         ) : (
           <div className="space-y-2">
             {alertas.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-card">
+              <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-3.5 shadow-card">
                 {p.imagenUrl ? (
-                  <img src={p.imagenUrl} alt="" className="h-11 w-11 rounded-xl object-cover" />
+                  <img src={p.imagenUrl} alt="" className="h-11 w-11 flex-shrink-0 rounded-xl object-cover" />
                 ) : (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100">
                     <Package size={18} className="text-gray-300" />
                   </div>
                 )}
@@ -87,15 +89,17 @@ export default function InventarioPage() {
                   <p className="truncate text-sm font-semibold text-gray-800">{p.nombre}</p>
                   <p className="text-xs text-gray-400">Stock: {p.stockActual} / mínimo {p.stockMinimo}</p>
                 </div>
-                <Badge color={p.stockActual === 0 ? "red" : "yellow"} size="sm">
-                  {p.stockActual === 0 ? "AGOTADO" : "STOCK BAJO"}
-                </Badge>
-                <button
-                  onClick={() => setReponiendo(p)}
-                  className="flex-shrink-0 rounded-lg bg-welve-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-welve-600"
-                >
-                  Reponer
-                </button>
+                <div className="ml-auto flex flex-shrink-0 items-center gap-2 sm:ml-0">
+                  <Badge color={p.stockActual === 0 ? "red" : "yellow"} size="sm">
+                    {p.stockActual === 0 ? "AGOTADO" : "STOCK BAJO"}
+                  </Badge>
+                  <button
+                    onClick={() => setReponiendo(p)}
+                    className="flex-shrink-0 rounded-lg bg-welve-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-welve-600"
+                  >
+                    Reponer
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -105,15 +109,15 @@ export default function InventarioPage() {
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-bold text-gray-900">Movimientos recientes</h2>
-          <div className="flex gap-2">
-            <Select options={productoOptions} value={filtroProducto} onChange={setFiltroProducto} className="w-48" />
-            <Select options={TIPO_OPTIONS} value={filtroTipo} onChange={setFiltroTipo} className="w-40" />
+          <div className="flex flex-wrap gap-2">
+            <Select options={productoOptions} value={filtroProducto} onChange={setFiltroProducto} className="w-full sm:w-48" />
+            <Select options={TIPO_OPTIONS} value={filtroTipo} onChange={setFiltroTipo} className="w-full sm:w-40" />
           </div>
         </div>
         <Table.Root>
           <Table.Header cols={[
             { label: "Producto" }, { label: "Tipo" }, { label: "Cantidad" },
-            { label: "Stock resultante" }, { label: "Motivo" }, { label: "Fecha" },
+            { label: "Stock resultante", className: HIDDEN_MOBILE }, { label: "Motivo", className: HIDDEN_MOBILE }, { label: "Fecha" },
           ]} />
           {isLoading ? (
             <Table.Loading cols={6} />
@@ -131,8 +135,8 @@ export default function InventarioPage() {
                   <Table.Cell className={`text-sm font-bold tabular-nums ${m.cantidad >= 0 ? "text-green-600" : "text-red-500"}`}>
                     {m.cantidad >= 0 ? "+" : ""}{m.cantidad}
                   </Table.Cell>
-                  <Table.Cell className="text-sm tabular-nums text-gray-700">{m.stockNuevo}</Table.Cell>
-                  <Table.Cell className="text-xs text-gray-500">{m.motivo ?? "—"}</Table.Cell>
+                  <Table.Cell className={`text-sm tabular-nums text-gray-700 ${HIDDEN_MOBILE}`}>{m.stockNuevo}</Table.Cell>
+                  <Table.Cell className={`text-xs text-gray-500 ${HIDDEN_MOBILE}`}>{m.motivo ?? "—"}</Table.Cell>
                   <Table.Cell className="text-xs text-gray-400">
                     {new Date(m.createdAt).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </Table.Cell>
