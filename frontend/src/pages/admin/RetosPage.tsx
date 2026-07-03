@@ -39,6 +39,22 @@ function fmtShort(iso: string) {
   return new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short" });
 }
 
+const CONDICION_LABEL: Record<Reto["condicionTipo"], string> = {
+  num_visitas: "Número de visitas",
+  visitas_en_periodo: "Visitas en período",
+  monto_acumulado: "Monto acumulado",
+  monto_en_periodo: "Monto en período",
+  productos_comprados: "Productos comprados",
+  puntos_acumulados: "Puntos acumulados",
+};
+
+function condicionResumen(reto: Reto): { valor: string; label: string } {
+  const esMonto = reto.condicionTipo === "monto_acumulado" || reto.condicionTipo === "monto_en_periodo";
+  const valor = esMonto ? `S/ ${reto.condicionValor}` : `${reto.condicionValor}`;
+  const sufijoPeriodo = reto.periodoDias ? ` / ${reto.periodoDias}d` : "";
+  return { valor: `${valor}${sufijoPeriodo}`, label: CONDICION_LABEL[reto.condicionTipo] };
+}
+
 const FILTROS: { label: string; value: "todos" | RetoEstado }[] = [
   { label: "Todos",       value: "todos"      },
   { label: "Activos",     value: "activo"     },
@@ -121,12 +137,8 @@ function RetoDetalle({ reto, onClose }: { reto: RetoConEstado | null; onClose: (
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-welve-50 p-4">
               <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Condición</p>
-              <p className="text-sm font-bold text-gray-900">
-                {reto.condicionTipo === "num_visitas" ? `${reto.condicionValor} visitas` : `S/ ${reto.condicionValor}`}
-              </p>
-              <p className="text-[10px] text-gray-500 mt-0.5">
-                {reto.condicionTipo === "num_visitas" ? "Visitas requeridas" : "Monto acumulado"}
-              </p>
+              <p className="text-sm font-bold text-gray-900">{condicionResumen(reto).valor}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">{condicionResumen(reto).label}</p>
             </div>
             {reto.estado === "activo" ? (
               <div className="rounded-xl bg-green-50 p-4">
@@ -259,12 +271,8 @@ export default function RetosPage() {
                   </div>
                 </Table.Cell>
                 <Table.Cell>
-                  <span className="text-sm text-gray-700">
-                    {r.condicionTipo === "num_visitas" ? `${r.condicionValor} visitas` : `S/ ${r.condicionValor}`}
-                  </span>
-                  <p className="text-[10px] text-gray-400">
-                    {r.condicionTipo === "num_visitas" ? "Número de visitas" : "Monto acumulado"}
-                  </p>
+                  <span className="text-sm text-gray-700">{condicionResumen(r).valor}</span>
+                  <p className="text-[10px] text-gray-400">{condicionResumen(r).label}</p>
                 </Table.Cell>
                 <Table.Cell>
                   <div className="flex items-center gap-1 text-sm text-gray-700">
