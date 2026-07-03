@@ -139,35 +139,82 @@ EMPRESAS_DATA = [
         "instagram": "@tiendamaki.pe",
         "facebook": "facebook.com/tiendamakipe",
     },
+    {
+        "nombre": "Pizzería Bella Napoli",
+        "rubro": RubroEmpresa.food_beverage,
+        "email": "admin@bellanapoli.pe",
+        "password": "Napoli2024!",
+        "ticket": 48.0,
+        "logo_url": _img("photo-1571997478779-2adcbbe9ab2f", 200, 200),
+        "imagen_portada_url": _img("photo-1513104890138-7c749659a591", 800, 450),
+        "descripcion": "Pizza al horno de leña con masa madre de 48 horas de fermentación e "
+                       "ingredientes importados de Italia. Ambiente familiar en el corazón de "
+                       "Barranco desde 2021.",
+        "direccion": "Av. Grau 680, Barranco, Lima",
+        "horario": "Mar-Dom 12pm-11pm",
+        "telefono_contacto": "+51 1 448 2210",
+        "sitio_web": "https://bellanapoli.pe",
+        "instagram": "@bellanapoli.pe",
+        "facebook": "facebook.com/bellanapolipe",
+    },
+    {
+        "nombre": "Librería Página 1",
+        "rubro": RubroEmpresa.retail,
+        "email": "admin@pagina1.pe",
+        "password": "Pagina2024!",
+        "ticket": 36.0,
+        "logo_url": _img("photo-1481627834876-b7833e8f5570", 200, 200),
+        "imagen_portada_url": _img("photo-1521056787327-2f5c17a3f4fa", 800, 450),
+        "descripcion": "Librería independiente especializada en narrativa latinoamericana, "
+                       "cómics y papelería de diseño. Un rincón de lectura pausada en San Isidro.",
+        "direccion": "Calle Miguel Dasso 134, San Isidro, Lima",
+        "horario": "Lun-Sáb 10am-8pm",
+        "telefono_contacto": "+51 1 449 5567",
+        "sitio_web": "https://pagina1.pe",
+        "instagram": "@pagina1.pe",
+        "facebook": "facebook.com/pagina1libreria",
+    },
 ]
 
-# 10 clientes únicos globales
+# 16 clientes únicos globales
 CLIENTES_DATA = [
-    {"nombre": "Ana García",    "email": "ana.garcia@gmail.com",    "whatsapp": "+51987654321", "dias_alta": 180},
-    {"nombre": "Carlos Quispe", "email": "carlos.quispe@gmail.com", "whatsapp": "+51976543210", "dias_alta": 155},
-    {"nombre": "María López",   "email": "maria.lopez@gmail.com",   "whatsapp": "+51965432109", "dias_alta": 130},
-    {"nombre": "Pedro Mamani",  "email": "pedro.mamani@gmail.com",  "whatsapp": "+51954321098", "dias_alta": 110},
-    {"nombre": "Lucía Ramos",   "email": "lucia.ramos@gmail.com",   "whatsapp": "+51943210987", "dias_alta":  90},
-    {"nombre": "Jorge Huanca",  "email": "jorge.huanca@gmail.com",  "whatsapp": "+51932109876", "dias_alta":  70},
-    {"nombre": "Rosa Vargas",   "email": "rosa.vargas@gmail.com",   "whatsapp": "+51921098765", "dias_alta":  50},
-    {"nombre": "Miguel Torres", "email": "miguel.torres@gmail.com", "whatsapp": "+51910987654", "dias_alta":  40},
-    {"nombre": "Elena Flores",  "email": "elena.flores@gmail.com",  "whatsapp": "+51999876543", "dias_alta":  25},
-    {"nombre": "Diego Chávez",  "email": "diego.chavez@gmail.com",  "whatsapp": "+51988765432", "dias_alta":  10},
+    {"nombre": "Ana García",     "email": "ana.garcia@gmail.com",     "whatsapp": "+51987654321", "dias_alta": 180},
+    {"nombre": "Carlos Quispe",  "email": "carlos.quispe@gmail.com",  "whatsapp": "+51976543210", "dias_alta": 155},
+    {"nombre": "María López",    "email": "maria.lopez@gmail.com",    "whatsapp": "+51965432109", "dias_alta": 130},
+    {"nombre": "Pedro Mamani",   "email": "pedro.mamani@gmail.com",   "whatsapp": "+51954321098", "dias_alta": 110},
+    {"nombre": "Lucía Ramos",    "email": "lucia.ramos@gmail.com",    "whatsapp": "+51943210987", "dias_alta":  90},
+    {"nombre": "Jorge Huanca",   "email": "jorge.huanca@gmail.com",   "whatsapp": "+51932109876", "dias_alta":  70},
+    {"nombre": "Rosa Vargas",    "email": "rosa.vargas@gmail.com",    "whatsapp": "+51921098765", "dias_alta":  50},
+    {"nombre": "Miguel Torres",  "email": "miguel.torres@gmail.com",  "whatsapp": "+51910987654", "dias_alta":  40},
+    {"nombre": "Elena Flores",   "email": "elena.flores@gmail.com",   "whatsapp": "+51999876543", "dias_alta":  25},
+    {"nombre": "Diego Chávez",   "email": "diego.chavez@gmail.com",   "whatsapp": "+51988765432", "dias_alta":  10},
+    {"nombre": "Sofía Ramírez",  "email": "sofia.ramirez@gmail.com",  "whatsapp": "+51977123456", "dias_alta": 200},
+    {"nombre": "Andrés Castro",  "email": "andres.castro@gmail.com",  "whatsapp": "+51966234567", "dias_alta": 165},
+    {"nombre": "Valentina Ruiz", "email": "valentina.ruiz@gmail.com", "whatsapp": "+51955345678", "dias_alta": 120},
+    {"nombre": "Bruno Salazar",  "email": "bruno.salazar@gmail.com",  "whatsapp": "+51944456789", "dias_alta":  80},
+    {"nombre": "Camila Vega",    "email": "camila.vega@gmail.com",    "whatsapp": "+51933567890", "dias_alta":  45},
+    {"nombre": "Renzo Delgado",  "email": "renzo.delgado@gmail.com",  "whatsapp": "+51922678901", "dias_alta":  15},
 ]
 
 # 5 clientes por empresa; clientes 0-1 compartidos entre Café Ritual y Salón Lumina,
-# clientes 2-4 compartidos entre Café Ritual y Tienda Maki → 10 únicos, 15 relaciones
+# clientes 2-4 compartidos entre Café Ritual y Tienda Maki, y las dos empresas
+# nuevas cada una comparte 2 clientes con Café Ritual para simular clientes
+# multi-negocio → 16 únicos, 25 relaciones
 EMPRESA_CLIENTES_IDX: dict[str, list[int]] = {
-    "Café Ritual":  [0, 1, 2, 3, 4],
-    "Salón Lumina": [0, 1, 5, 6, 7],
-    "Tienda Maki":  [2, 3, 4, 8, 9],
+    "Café Ritual":            [0, 1, 2, 3, 4],
+    "Salón Lumina":           [0, 1, 5, 6, 7],
+    "Tienda Maki":            [2, 3, 4, 8, 9],
+    "Pizzería Bella Napoli":  [0, 4, 10, 11, 12],
+    "Librería Página 1":      [1, 6, 13, 14, 15],
 }
 
 # (visitas_totales, racha_actual, dias_ultima_visita) — uno por cliente por empresa
 RELACIONES_STATS: dict[str, list[tuple[int, int, int]]] = {
-    "Café Ritual":  [(22, 8, 1),  (15, 4, 5),  (8,  2, 12), (3,  1, 20), (18, 6, 3) ],
-    "Salón Lumina": [(12, 5, 2),  (7,  3, 8),  (20, 7, 1),  (4,  0, 25), (9,  2, 10)],
-    "Tienda Maki":  [(5,  1, 15), (11, 4, 4),  (25, 8, 2),  (2,  0, 28), (14, 5, 7) ],
+    "Café Ritual":            [(22, 8, 1),  (15, 4, 5),  (8,  2, 12), (3,  1, 20), (18, 6, 3) ],
+    "Salón Lumina":           [(12, 5, 2),  (7,  3, 8),  (20, 7, 1),  (4,  0, 25), (9,  2, 10)],
+    "Tienda Maki":            [(5,  1, 15), (11, 4, 4),  (25, 8, 2),  (2,  0, 28), (14, 5, 7) ],
+    "Pizzería Bella Napoli":  [(9,  3, 6),  (13, 5, 2),  (4,  1, 18), (17, 6, 1),  (6,  2, 14)],
+    "Librería Página 1":      [(6,  2, 9),  (10, 4, 3),  (2,  0, 30), (15, 6, 2),  (3,  1, 22)],
 }
 
 # 4 cupones temáticos por empresa (mismo orden/índice en las 3 — CANJES_DATA y
@@ -379,12 +426,110 @@ CUPONES_POR_EMPRESA: dict[str, list[dict]] = {
                                      "Metropolitana\n• No acumulable con otras ofertas",
         },
     ],
+    "Pizzería Bella Napoli": [
+        {
+            "nombre": "20% de descuento en tu pedido",
+            "tipo": TipoCupon.porcentual, "valor": 20.0, "monto_minimo": 40.0,
+            "limite_usos_total": 100, "usos_actuales": 12, "destacado": True,
+            "imagen_url": _img("photo-1513104890138-7c749659a591"),
+            "tags": ["pizza", "descuento"], "color_tema": "#EF4444",
+            "descripcion_larga": "20% de descuento en cualquier pizza de la carta — la excusa "
+                                 "perfecta para tu noche de pizza con la familia o los amigos.",
+            "instrucciones_canje": "Muestra tu código al mozo antes de pagar.",
+            "terminos_condiciones": "• Válido de martes a jueves\n• No acumulable con otras ofertas\n"
+                                     "• Compra mínima de S/40\n• Sujeto a disponibilidad",
+        },
+        {
+            "nombre": "Postre gratis en tu 5ta visita",
+            "tipo": TipoCupon.producto_gratis, "valor": None, "monto_minimo": None,
+            "limite_usos_total": 50, "usos_actuales": 6, "destacado": True,
+            "imagen_url": _img("photo-1551024506-0bccd828d307"),
+            "tags": ["postres", "favorito"], "color_tema": "#F97316",
+            "descripcion_larga": "Un tiramisú casero de cortesía para nuestros clientes más "
+                                 "fieles — la receta original de la nonna.",
+            "instrucciones_canje": "Menciona 'WELVE' al pedir la cuenta.",
+            "terminos_condiciones": "• Un canje por visita\n• Sujeto a disponibilidad",
+        },
+        {
+            "nombre": "2x1 en pizzas medianas",
+            "tipo": TipoCupon.dos_por_uno, "valor": None, "monto_minimo": None,
+            "limite_usos_total": None, "usos_actuales": 4, "destacado": False,
+            "imagen_url": _img("photo-1548365328-9f547fb0953b"),
+            "tags": ["pizza", "promo"], "color_tema": "#EC4899",
+            "descripcion_larga": "Lleva dos pizzas medianas de la misma variedad al precio de "
+                                 "una — ideal para compartir.",
+            "instrucciones_canje": "Indica el cupón antes de ordenar.",
+            "terminos_condiciones": "• Válido solo en pizzas medianas\n• No acumulable\n"
+                                     "• Válido todos los días",
+        },
+        {
+            "nombre": "S/15 off en compras sobre S/80",
+            "tipo": TipoCupon.monto_fijo, "valor": 15.0, "monto_minimo": 80.0,
+            "limite_usos_total": None, "usos_actuales": 3, "destacado": False,
+            "imagen_url": _img("photo-1565299624946-b28f40a0ae38"),
+            "tags": ["descuento"], "color_tema": "#10B981",
+            "descripcion_larga": "S/15 de descuento directo en pedidos familiares desde S/80.",
+            "instrucciones_canje": "Presenta el código antes de pagar la cuenta.",
+            "terminos_condiciones": "• Compra mínima de S/80\n• No acumulable con otras ofertas\n"
+                                     "• Un uso por cliente",
+        },
+    ],
+    "Librería Página 1": [
+        {
+            "nombre": "15% de descuento en libros",
+            "tipo": TipoCupon.porcentual, "valor": 15.0, "monto_minimo": 30.0,
+            "limite_usos_total": 100, "usos_actuales": 9, "destacado": True,
+            "imagen_url": _img("photo-1512820790803-83ca734da794"),
+            "tags": ["libros", "descuento"], "color_tema": "#3B82F6",
+            "descripcion_larga": "15% de descuento en toda la sección de narrativa y ensayo — "
+                                 "tu próxima lectura, más accesible.",
+            "instrucciones_canje": "Muestra tu código en caja antes de pagar.",
+            "terminos_condiciones": "• Válido de lunes a viernes\n• No acumulable con otras ofertas\n"
+                                     "• Compra mínima de S/30\n• Sujeto a stock disponible",
+        },
+        {
+            "nombre": "Cuaderno de regalo",
+            "tipo": TipoCupon.producto_gratis, "valor": None, "monto_minimo": None,
+            "limite_usos_total": 50, "usos_actuales": 5, "destacado": True,
+            "imagen_url": _img("photo-1531346878377-a5be20888e57"),
+            "tags": ["papeleria", "favorito"], "color_tema": "#F97316",
+            "descripcion_larga": "Un cuaderno de diseño exclusivo Página 1 de cortesía para "
+                                 "nuestros clientes más fieles.",
+            "instrucciones_canje": "Menciona 'WELVE' al momento de pagar.",
+            "terminos_condiciones": "• Un canje por visita\n• Sujeto a stock disponible\n"
+                                     "• No canjeable por dinero en efectivo",
+        },
+        {
+            "nombre": "2x1 en cómics seleccionados",
+            "tipo": TipoCupon.dos_por_uno, "valor": None, "monto_minimo": None,
+            "limite_usos_total": None, "usos_actuales": 2, "destacado": False,
+            "imagen_url": _img("photo-1544716278-ca5e3f4abd8c"),
+            "tags": ["comics", "promo"], "color_tema": "#EC4899",
+            "descripcion_larga": "Lleva dos cómics de la mesa de novedades al precio de uno.",
+            "instrucciones_canje": "Indica el cupón antes de pagar en caja.",
+            "terminos_condiciones": "• Válido solo en la mesa de cómics seleccionados\n"
+                                     "• No acumulable\n• Sujeto a stock disponible",
+        },
+        {
+            "nombre": "S/8 off en compras sobre S/40",
+            "tipo": TipoCupon.monto_fijo, "valor": 8.0, "monto_minimo": 40.0,
+            "limite_usos_total": None, "usos_actuales": 1, "destacado": False,
+            "imagen_url": _img("photo-1524995997946-a1c2e315a42f"),
+            "tags": ["descuento"], "color_tema": "#10B981",
+            "descripcion_larga": "S/8 de descuento directo en compras desde S/40.",
+            "instrucciones_canje": "Presenta el código antes de pagar en caja.",
+            "terminos_condiciones": "• Compra mínima de S/40\n• No acumulable con otras ofertas\n"
+                                     "• Un uso por cliente",
+        },
+    ],
 }
 
 MEMBRESIAS_DATA: dict[str, dict] = {
-    "Café Ritual":  {"nombre": "Club Café",   "precio": 25.0, "beneficio": "Café gratis cada lunes"},
-    "Salón Lumina": {"nombre": "Club Lumina", "precio": 40.0, "beneficio": "20% off en cualquier servicio"},
-    "Tienda Maki":  {"nombre": "Club Maki",   "precio": 30.0, "beneficio": "Envío gratis en todos tus pedidos"},
+    "Café Ritual":            {"nombre": "Club Café",   "precio": 25.0, "beneficio": "Café gratis cada lunes"},
+    "Salón Lumina":           {"nombre": "Club Lumina", "precio": 40.0, "beneficio": "20% off en cualquier servicio"},
+    "Tienda Maki":            {"nombre": "Club Maki",   "precio": 30.0, "beneficio": "Envío gratis en todos tus pedidos"},
+    "Pizzería Bella Napoli":  {"nombre": "Club Napoli", "precio": 35.0, "beneficio": "Postre gratis en cada visita"},
+    "Librería Página 1":      {"nombre": "Club Página 1", "precio": 20.0, "beneficio": "10% off en toda tu compra"},
 }
 
 # Catálogo del módulo de Caja/POS — Salón Lumina son todo servicios (sin
@@ -415,6 +560,21 @@ PRODUCTOS_POR_EMPRESA: dict[str, list[dict]] = {
         {"nombre": "Cinturón de cuero",    "sku": "ACC-002", "categoria": "Accesorios",  "precio_base": 45.0,  "stock_actual": 25},
         {"nombre": "Zapatillas urbanas",   "sku": "CAL-001", "categoria": "Calzado",     "precio_base": 159.0, "stock_actual": 20},
     ],
+    "Pizzería Bella Napoli": [
+        {"nombre": "Pizza margarita",       "sku": "PIZ-001", "categoria": "Pizzas",   "precio_base": 32.0, "stock_actual": 40},
+        {"nombre": "Pizza pepperoni",       "sku": "PIZ-002", "categoria": "Pizzas",   "precio_base": 38.0, "stock_actual": 40},
+        {"nombre": "Pizza cuatro quesos",   "sku": "PIZ-003", "categoria": "Pizzas",   "precio_base": 42.0, "stock_actual": 30},
+        {"nombre": "Tiramisú",              "sku": "POS-001", "categoria": "Postres",  "precio_base": 16.0, "stock_actual": 25},
+        {"nombre": "Gaseosa 500ml",         "sku": "BEB-001", "categoria": "Bebidas",  "precio_base": 7.0,  "stock_actual": 100},
+        {"nombre": "Vino tinto copa",       "sku": "BEB-002", "categoria": "Bebidas",  "precio_base": 18.0, "stock_actual": 40},
+    ],
+    "Librería Página 1": [
+        {"nombre": "Cien años de soledad",  "sku": "LIB-001", "categoria": "Narrativa",  "precio_base": 49.0, "stock_actual": 20},
+        {"nombre": "Rayuela",               "sku": "LIB-002", "categoria": "Narrativa",  "precio_base": 45.0, "stock_actual": 15},
+        {"nombre": "Cómic Watchmen",        "sku": "COM-101", "categoria": "Comics",     "precio_base": 65.0, "stock_actual": 12},
+        {"nombre": "Cuaderno de diseño",    "sku": "PAP-001", "categoria": "Papelería",  "precio_base": 22.0, "stock_actual": 35},
+        {"nombre": "Set de plumones",       "sku": "PAP-002", "categoria": "Papelería",  "precio_base": 28.0, "stock_actual": 25},
+    ],
 }
 
 _PRODUCTO_DEFAULTS = {
@@ -441,6 +601,16 @@ CANJES_DATA: dict[str, list[tuple[int, int, int, int]]] = {
         (0, 0, 1, 10), (1, 1, 4, 14), (2, 2, 6, 9),  (3, 3, 9, 16),
         (4, 0, 11, 11), (0, 1, 14, 13), (1, 2, 16, 8), (2, 0, 19, 15),
         (3, 1, 23, 10), (4, 3, 28, 12),
+    ],
+    "Pizzería Bella Napoli": [
+        (0, 0, 2, 19), (1, 1, 5, 20), (2, 2, 7, 13), (3, 3, 10, 21),
+        (4, 0, 12, 14), (0, 1, 15, 20), (1, 2, 18, 13), (2, 0, 21, 19),
+        (3, 1, 24, 20), (4, 3, 27, 13),
+    ],
+    "Librería Página 1": [
+        (0, 0, 3, 11), (1, 1, 6, 16), (2, 2, 9, 12), (3, 3, 13, 17),
+        (4, 0, 16, 11), (0, 1, 19, 16), (1, 2, 22, 12), (2, 0, 25, 17),
+        (3, 1, 27, 11), (4, 3, 29, 16),
     ],
 }
 
