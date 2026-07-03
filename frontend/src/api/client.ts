@@ -1,7 +1,16 @@
 import axios from "axios";
 
+// VITE_API_URL se incrusta en build time (Docker build-arg en producción, ver
+// frontend/Dockerfile y DEPLOY.md). Sin ella, cae a una ruta relativa: sirve
+// para dev (proxy de Vite, ver vite.config.ts) y para el docker-compose local
+// donde nginx.conf reenvía /api/ al contenedor del backend. Con ella
+// (deploy en Railway, dominios separados), pega directo al backend.
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api/v1`
+  : "/api/v1";
+
 const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
 });
 

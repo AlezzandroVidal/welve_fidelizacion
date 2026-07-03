@@ -6,8 +6,9 @@ ROOT_ENV = Path(__file__).parent.parent.parent.parent / ".env"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT_ENV, extra="ignore")
 
-    # MongoDB
-    mongo_uri: str = "mongodb+srv://202211304_db_user:xIOqfhqvSR2GiruS@welve.yaus4t3.mongodb.net/?appName=welve"
+    # MongoDB — sin default real a propósito (este archivo se commitea): debe
+    # venir siempre de .env / .env.production / las variables de Railway.
+    mongo_uri: str = "mongodb+srv://usuario:password@cluster.mongodb.net/?appName=welve"
     mongo_db: str = "welve"
 
     # Redis / Celery
