@@ -27,9 +27,11 @@ El tenant raíz. No lleva `empresa_id` (es la raíz).
 |---|---|---|
 | `id` | `PydanticObjectId` | |
 | `nombre` | `str` | |
-| `rubro` | `enum RubroEmpresa` | `food_beverage`, `belleza`, `retail`, `otro` |
+| `rubro` | `enum RubroEmpresa` | `food_beverage`, `belleza`, `retail`, `fitness`, `educacion`, `salud`, `entretenimiento`, `otro` |
 | `admin_email` | `Indexed(str, unique=True)` | login del panel admin |
 | `admin_password_hash` | `str` | bcrypt/argon2 |
+| `admin_nombre` | `str` | nombre del dueño/admin que se registró; default `""` en empresas sembradas antes de este campo |
+| `admin_telefono` | `Optional[str]` | |
 | `plan_suscripcion` | `enum PlanSuscripcion` | `starter`, `growth`, `pro` — plan que la empresa paga a Welve |
 | `estado` | `enum EstadoEmpresa` | `activo`, `suspendido`, `cancelado` |
 | `config` | `EmpresaConfig` (embedded) | `racha_dias_ruptura: int = 7`, `soles_por_punto`, `expiracion_meses`, `recompensas_automaticas: list[RecompensaAutomatica] = []` |
@@ -53,8 +55,12 @@ Cliente B2C global — puede relacionarse con varias empresas (ver `relaciones_c
 |---|---|---|
 | `id` | `PydanticObjectId` | |
 | `nombre` | `str` | |
+| `apellido` | `Optional[str]` | |
 | `email` | `Optional[Indexed(str, sparse=True)]` | uno de los dos (email/whatsapp) requerido |
 | `whatsapp` | `Optional[Indexed(str, sparse=True)]` | formato E.164 |
+| `password_hash` | `Optional[str]` | `None` si el cliente solo ha usado magic link — login por password y magic link coexisten |
+| `fecha_nacimiento` | `Optional[date]` | |
+| `genero` | `Optional[str]` | `"M"` / `"F"` / `"otro"` / `"prefiero_no_decir"` (`enum Genero`) |
 | `fecha_alta` | `datetime` | |
 | `created_at` | `datetime` | |
 

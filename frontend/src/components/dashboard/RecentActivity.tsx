@@ -1,9 +1,6 @@
+import { useEffect, useState } from "react";
 import { QrCode, Link as LinkIcon, UserCheck, Sparkles } from "lucide-react";
-import { Card } from "../ui";
-import { Skeleton } from "../ui";
-import { useCanjes } from "../../hooks/useCanjes";
-
-/* ── Helpers ─────────────────────────────────────────────────────────────── */
+import type { Canje } from "../../api/canjes";
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -38,69 +35,56 @@ const CANAL_ICONS: Record<string, { icon: typeof QrCode; color: string }> = {
   automatico:   { icon: Sparkles,  color: "text-green-500"  },
 };
 
-/* ── Component ───────────────────────────────────────────────────────────── */
+interface Props {
+  data: Canje[] | undefined;
+}
 
-export default function RecentActivity() {
-  const { data: canjes, isLoading } = useCanjes();
+/** Bare — vive dentro de Widget.tsx (ActividadRecienteWidget). Solo se usa ahí.
+ * El re-render cada 30s no vuelve a pedir datos, solo refresca los textos de
+ * "hace Xmin" (el auto-refresh real de datos, cada 60s, vive en el widget). */
+export default function RecentActivity({ data }: Props) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
-  const recent = canjes?.slice(0, 10) ?? [];
+  const recent = data?.slice(0, 8) ?? [];
+
+  if (!recent.length) {
+    return <p className="py-12 text-center text-sm text-gray-400">Sin actividad reciente</p>;
+  }
 
   return (
-    <Card padding="none" className="overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-50">
-        <h3 className="text-sm font-bold text-gray-900">Actividad reciente</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Últimos canjes registrados</p>
-      </div>
+    <ul className="-mx-5 -mb-5 divide-y divide-gray-50">
+      {recent.map((c, i) => {
+        const name = c.clienteNombre ?? "Cliente";
+        const CanalIcon = CANAL_ICONS[c.canal]?.icon ?? QrCode;
+        const canalColor = CANAL_ICONS[c.canal]?.color ?? "text-gray-400";
 
-      {isLoading ? (
-        <div className="divide-y divide-gray-50">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-3.5">
-              <Skeleton variant="circle" width={32} height={32} />
-              <div className="flex-1 space-y-1.5">
-                <Skeleton variant="text" width="40%" />
-                <Skeleton variant="text" width="60%" />
-              </div>
-              <Skeleton variant="text" width={48} />
+        return (
+          <li
+            key={c.id}
+            className="relative flex items-center gap-3 px-5 py-3.5 pl-6 transition-colors duration-100 hover:bg-welve-50/40 animate-fade-up before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-welve-500/20"
+            style={{ animationDelay: `${i * 30}ms` }}
+          >
+            <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${hashColor(name)}`}>
+              {initials(name)}
             </div>
-          ))}
-        </div>
-      ) : !recent.length ? (
-        <p className="py-12 text-center text-sm text-gray-400">Sin actividad reciente</p>
-      ) : (
-        <ul className="divide-y divide-gray-50">
-          {recent.map((c, i) => {
-            const name      = c.clienteNombre ?? "Cliente";
-            const CanalIcon = CANAL_ICONS[c.canal]?.icon  ?? QrCode;
-            const canalColor = CANAL_ICONS[c.canal]?.color ?? "text-gray-400";
 
-            return (
-              <li
-                key={c.id}
-                className="flex items-center gap-3 px-5 py-3.5 hover:bg-welve-50/40 transition-colors duration-100 animate-fade-up"
-                style={{ animationDelay: `${i * 30}ms` }}
-              >
-                {/* Avatar */}
-                <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${hashColor(name)}`}>
-                  {initials(name)}
-                </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-gray-800 truncate">
+                {name} <span className="font-normal text-gray-400">canjeó {c.cuponNombre ?? "un cupón eliminado"}</span>
+              </p>
+            </div>
 
-                {/* Info */}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-800 truncate">{name}</p>
-                  <p className="text-xs text-gray-400 truncate">{c.cuponNombre ?? "Cupón eliminado"}</p>
-                </div>
-
-                {/* Canal + tiempo */}
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <CanalIcon size={14} className={canalColor} />
-                  <span className="text-[10px] text-gray-400 tabular">{relativeTime(c.fecha)}</span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </Card>
+            <div className="flex flex-shrink-0 flex-col items-end gap-1">
+              <CanalIcon size={14} className={canalColor} />
+              <span className="text-[10px] text-gray-400 tabular-nums">{relativeTime(c.fecha)}</span>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

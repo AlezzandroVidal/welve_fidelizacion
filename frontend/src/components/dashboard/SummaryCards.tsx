@@ -36,14 +36,20 @@ interface CardProps {
 function Card({ label, value, sub, icon: Icon, color, fmt }: CardProps) {
   const count = useCountUp(value);
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-card flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+    <div className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-card flex flex-col gap-3">
+      <Icon
+        size={96}
+        strokeWidth={1.5}
+        className="pointer-events-none absolute -bottom-5 -right-5 opacity-[0.05]"
+        style={{ color }}
+      />
+      <div className="relative flex items-center justify-between">
         <span className="text-sm font-medium text-gray-500">{label}</span>
         <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: color + "18" }}>
           <Icon size={18} style={{ color }} />
         </div>
       </div>
-      <div>
+      <div className="relative">
         <p className="text-3xl font-bold text-gray-900 tabular-nums">
           {fmt ? fmt(count) : count.toLocaleString("es-PE")}
         </p>

@@ -31,3 +31,33 @@ export function useDeleteLogo() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["empresa", "me"] }),
   });
 }
+
+export function useUploadPortada() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dataUri: string) => empresaApi.uploadPortada(dataUri).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["empresa", "me"] }),
+  });
+}
+
+export function useDeletePortada() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => empresaApi.deletePortada().then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["empresa", "me"] }),
+  });
+}
+
+export function useCambiarPasswordEmpresa() {
+  return useMutation({
+    mutationFn: ({ passwordActual, passwordNueva }: { passwordActual: string; passwordNueva: string }) =>
+      empresaApi.cambiarPassword(passwordActual, passwordNueva).then(r => r.data),
+  });
+}
+
+export function useDesactivarCuenta() {
+  return useMutation({
+    mutationFn: (nombreConfirmacion: string) =>
+      empresaApi.desactivarCuenta(nombreConfirmacion).then(r => r.data),
+  });
+}

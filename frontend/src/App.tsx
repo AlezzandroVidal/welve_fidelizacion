@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout";
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import VerifyPage from "./pages/auth/VerifyPage";
@@ -14,6 +15,13 @@ import RetosPage from "./pages/admin/RetosPage";
 import MembresiasPage from "./pages/admin/MembresiasPage";
 import ConfigPage from "./pages/admin/ConfigPage";
 import QRPage from "./pages/admin/QRPage";
+import StaffPage from "./pages/admin/StaffPage";
+import ResenasPage from "./pages/admin/ResenasPage";
+import PagosPage from "./pages/admin/PagosPage";
+import CajaPage from "./pages/admin/CajaPage";
+import VentasPage from "./pages/admin/VentasPage";
+import ProductosPage from "./pages/admin/ProductosPage";
+import InventarioPage from "./pages/admin/InventarioPage";
 import QRVisitaPage from "./pages/qr/QRVisitaPage";
 import QRCuponPage from "./pages/qr/QRCuponPage";
 import WalletLayout from "./layouts/WalletLayout";
@@ -22,6 +30,9 @@ import EmpresaDetallePage from "./pages/wallet/EmpresaDetallePage";
 import MisCuponesPage from "./pages/wallet/MisCuponesPage";
 import HistorialPage from "./pages/wallet/HistorialPage";
 import PerfilPage from "./pages/wallet/PerfilPage";
+import MiQRPage from "./pages/wallet/MiQRPage";
+import CuponDetallePage from "./pages/wallet/CuponDetallePage";
+import MisRetosPage from "./pages/wallet/MisRetosPage";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +42,7 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/verify" element={<VerifyPage />} />
@@ -54,10 +65,17 @@ export default function App() {
               <Route path="membresias" element={<MembresiasPage />} />
               <Route path="config"    element={<ConfigPage />} />
               <Route path="qr"        element={<QRPage />} />
+              <Route path="staff"     element={<StaffPage />} />
+              <Route path="resenas"   element={<ResenasPage />} />
+              <Route path="pagos"     element={<PagosPage />} />
+              <Route path="caja"       element={<CajaPage />} />
+              <Route path="ventas"     element={<VentasPage />} />
+              <Route path="productos"  element={<ProductosPage />} />
+              <Route path="inventario" element={<InventarioPage />} />
             </Route>
 
             {/* QR — pantallas fullscreen sin sidebar */}
-            {/* Código universal de visita: pública, funciona con o sin sesión de cliente */}
+            {/* QR de afiliación: pública, el cliente lo usa una sola vez para unirse */}
             <Route path="/qr/visita/:empresaId" element={<QRVisitaPage />} />
             <Route
               path="/qr/cupon/:cuponId"
@@ -78,11 +96,29 @@ export default function App() {
               }
             >
               <Route index element={<InicioPage />} />
-              <Route path="empresa/:id" element={<EmpresaDetallePage />} />
               <Route path="mis-cupones" element={<MisCuponesPage />} />
+              <Route path="mis-retos" element={<MisRetosPage />} />
               <Route path="historial" element={<HistorialPage />} />
               <Route path="perfil" element={<PerfilPage />} />
             </Route>
+
+            {/* Detalle de cupón — PÚBLICA, compartible sin sesión; solo el canje requiere login */}
+            <Route path="/wallet/cupon/:cuponId" element={<CuponDetallePage />} />
+
+            {/* Detalle de empresa — PÚBLICA (retos/cupones visibles sin sesión, con
+                progreso en 0%); fuera de WalletLayout porque su sidebar depende de
+                datos que solo existen para un cliente logueado (ver EmpresaHero) */}
+            <Route path="/wallet/empresa/:id" element={<EmpresaDetallePage />} />
+
+            {/* Mi código — pantalla fullscreen sin sidebar, el cliente la muestra al staff */}
+            <Route
+              path="/wallet/empresa/:empresaId/mi-qr"
+              element={
+                <ProtectedRoute allowedRoles={["cliente"]}>
+                  <MiQRPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Super admin */}
             <Route

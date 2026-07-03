@@ -6,5 +6,6 @@ from app.core.dependencies import (  # noqa: F401
     get_current_cliente_context,
     get_current_cliente,
     get_global_cliente,
+    get_optional_cliente,
     get_current_super_admin,
 )

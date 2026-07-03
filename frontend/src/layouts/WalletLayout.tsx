@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Ticket, Clock, User, ChevronLeft } from 'lucide-react';
+import { Home, Ticket, Target, Clock, User, ChevronLeft, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useMisCupones, usePerfil } from '../hooks/useWallet';
+import { useCupones, usePerfil } from '../hooks/useWallet';
+import { useMisRetos } from '../hooks/useMisRetos';
+import { useNotificaciones } from '../hooks/useNotificaciones';
 import Sidebar, { SIDEBAR_W, SIDEBAR_W_COLLAPSED, type SidebarNavGroup } from '../components/layout/Sidebar';
+import NotificacionesSheet from '../components/wallet/NotificacionesSheet';
+import logoWelveIcon from '../resources/logo_welve_icon.png';
 
 export default function WalletLayout() {
   const location = useLocation();
@@ -12,18 +16,30 @@ export default function WalletLayout() {
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const sideW = collapsed ? SIDEBAR_W_COLLAPSED : SIDEBAR_W;
 
   // El JWT del cliente no lleva nombre/email (ver core/security.py) — se piden al perfil real.
   const { data: perfilData } = usePerfil();
-  const { data: misCuponesData } = useMisCupones();
-  const totalCupones = misCuponesData
-    ? Object.values(misCuponesData).reduce((acc: number, curr: any) => acc + curr.cupones.length, 0)
+  const { data: cuponesData } = useCupones();
+  const { data: misRetosData } = useMisRetos();
+  const { data: notificaciones } = useNotificaciones();
+  const totalNoLeidas = notificaciones?.filter((n) => !n.leida).length ?? 0;
+  // Cuenta solo los que puede canjear ahora — consistente con el tab
+  // "Disponibles" de MisCuponesPage, no todos los que puede ver.
+  const totalCupones = cuponesData
+    ? Object.values(cuponesData).reduce(
+        (acc: number, curr: any) => acc + curr.cupones.filter((c: any) => c.acceso?.puede_canjear).length, 0,
+      )
     : 0;
+  const totalRetosActivos = (misRetosData ?? []).reduce(
+    (acc, e) => acc + e.retos.filter((r) => !r.completado).length, 0,
+  );
 
   const tabs = [
     { name: 'Inicio', path: '/wallet', icon: Home },
     { name: 'Mis Cupones', path: '/wallet/mis-cupones', icon: Ticket, badge: totalCupones },
+    { name: 'Retos', path: '/wallet/mis-retos', icon: Target, badge: totalRetosActivos },
     { name: 'Historial', path: '/wallet/historial', icon: Clock },
     { name: 'Perfil', path: '/wallet/perfil', icon: User },
   ];
@@ -58,8 +74,8 @@ export default function WalletLayout() {
         style={{ ['--sidebar-offset' as string]: `${sideW + 24}px` }}
       >
         {/* MOBILE TOP BAR */}
-        <header className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-sm">
-          <div className="px-4 h-14 flex items-center justify-between">
+        <header className="md:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
+          <div className="px-4 h-16 flex items-center justify-between">
             {isInteriorPage ? (
               <div className="flex items-center gap-2">
                 <button
@@ -74,13 +90,23 @@ export default function WalletLayout() {
               <>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 bg-welve-500 rounded-md flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">W</span>
+                    <img src={logoWelveIcon} alt="Welve" className="h-4 w-4 object-contain" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-600">
                     Hola{perfilData?.cliente?.nombre ? `, ${perfilData.cliente.nombre.split(' ')[0]}` : ''}
                   </span>
+                  <button
+                    onClick={() => setNotifOpen(true)}
+                    className="relative p-1.5 rounded-full hover:bg-gray-100 transition-colors active:scale-95"
+                    aria-label="Notificaciones"
+                  >
+                    <Bell size={20} className="text-gray-600" />
+                    {totalNoLeidas > 0 && (
+                      <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-red-500 border border-white" />
+                    )}
+                  </button>
                   <div className="w-8 h-8 rounded-full bg-welve-100 flex items-center justify-center text-welve-600 font-bold text-sm">
                     {perfilData?.cliente?.nombre ? perfilData.cliente.nombre.charAt(0).toUpperCase() : 'W'}
                   </div>
@@ -89,6 +115,18 @@ export default function WalletLayout() {
             )}
           </div>
         </header>
+
+        {/* DESKTOP NOTIFICATION BELL — flotante arriba a la derecha del contenido */}
+        <button
+          onClick={() => setNotifOpen(true)}
+          className="hidden md:flex fixed top-4 right-6 z-30 h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors active:scale-95"
+          aria-label="Notificaciones"
+        >
+          <Bell size={18} className="text-gray-600" />
+          {totalNoLeidas > 0 && (
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 border border-white" />
+          )}
+        </button>
 
         <div className="flex-1 max-w-5xl mx-auto w-full">
           <Outlet />
@@ -127,6 +165,8 @@ export default function WalletLayout() {
           })}
         </ul>
       </nav>
+
+      <NotificacionesSheet open={notifOpen} onClose={() => setNotifOpen(false)} />
     </div>
   );
 }

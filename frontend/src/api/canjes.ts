@@ -11,7 +11,10 @@ export interface Canje {
   canal: CanalCanje;
   staffRef: string | null;
   clienteNombre: string | null;
+  clienteCodigo: string | null;
   cuponNombre: string | null;
+  cuponTipo: string | null;
+  cuponValor: number | null;
 }
 
 export interface CreateCanjeDto {
@@ -22,6 +25,7 @@ export interface CreateCanjeDto {
 
 export const canjesApi = {
   list: () => api.get<Canje[]>("/canjes"),
+  porCliente: (clienteId: string) => api.get<Canje[]>(`/canjes/cliente/${clienteId}`),
   create: (clienteId: string, data: CreateCanjeDto) =>
     api.post<Canje>(`/canjes/${clienteId}`, data),
 };

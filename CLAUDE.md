@@ -64,14 +64,24 @@ cd backend && pytest -v
 # pero no existe todavía ningún *.test.ts(x) — crearlo al agregar el primer test)
 cd frontend && npm test
 
-# Dev server frontend (sin Docker, apunta a API en :8000)
+# Dev server frontend (sin Docker, apunta a API en :8000 via proxy de Vite)
 cd frontend && npm run dev
 
-# Linter frontend
+# Build de producción frontend (tsc --noEmit implícito + vite build)
+cd frontend && npm run build
+
+# Linter frontend (flat config en frontend/eslint.config.js — reglas
+# react-hooks limitadas a rules-of-hooks/exhaustive-deps a propósito: la
+# v7 del plugin agrega reglas de React Compiler en "recommended" que no
+# aplican a este codebase)
 cd frontend && npm run lint
 
 # Celery worker (desarrollo local sin Docker)
-cd backend && celery -A app.worker.celery_app worker --loglevel=info
+# -B corre beat embebido en el mismo proceso: son los jobs periódicos de
+# romper rachas / expirar cupones / evaluar exclusivos / notificar retos
+# (ver app/worker/celery_app.py). Sin -B el worker consume tareas encoladas
+# pero nunca dispara nada por su cuenta.
+cd backend && celery -A app.worker.celery_app worker -B --loglevel=info
 
 # Seed de datos de ejemplo (idempotente — no duplica si ya existen)
 cd backend && python scripts/seed.py
@@ -120,6 +130,14 @@ Schema completo, tipos de campo, índices y enums en `DATABASE.MD`. Resumen de c
 | `membresias` | Sí | definición del club mensual que ofrece la empresa |
 | `membresias_clientes` | Sí | estado de suscripción de un cliente a una membresía |
 | `canjes` | Sí | registro inmutable de cada redención |
+| `resenas` | Sí | calificación 1-5 estrellas + comentario opcional de un cliente sobre una empresa (una por par cliente/empresa) |
+| `productos` | Sí | catálogo de productos/servicios del módulo Caja (SKU, precio, stock) |
+| `movimientos_inventario` | Sí | historial inmutable de entradas/salidas/ajustes de stock de un `Producto` |
+| `ventas` | Sí | registro inmutable de cada venta procesada en Caja (snapshot de items, método de pago, cupón aplicado) |
+| `pagos` | Sí | pago de la **suscripción de la empresa a Welve** (plan Starter/Growth/Pro) — no confundir con `ventas` |
+| `cupones_desbloqueados` | Sí | que un cliente desbloqueó un cupón `por_reto`/`por_requisito` pero no necesariamente canjeó — ver motor de cupones flexibles abajo |
+| `notificaciones` | No (por cliente) | notificaciones en-app persistidas (campana en `WalletLayout`); distinto de los recordatorios WhatsApp/email efímeros del worker |
+| `historial_visitas` | Sí | log con fecha+monto de cada visita/venta, para progreso por período (ej. "3 visitas en 30 días") — `RelacionClienteEmpresa` solo tiene totales acumulados |
 | `welve_admins` | No (global) | staff interno de Welve (superadmin / soporte) |
 
 Todos los enums de dominio están centralizados en `app/models/enums.py`
@@ -136,13 +154,84 @@ Cada módulo de dominio sigue el patrón `router → service → model` y vive e
 
 Módulos: `empresas` (incluye auth admin), `admin_auth` (login WelveAdmin, prefijo interno `/admin/auth`),
 `clientes`, `relaciones` (historial/racha/segmento), `cupones`, `retos`, `membresias`, `canjes`,
+`resenas` (calificación + comentario de un cliente sobre una empresa),
 `auth_cliente` (magic link/QR), `metricas` (dashboard, solo lectura),
 `wallet` (vista del cliente final sobre todas sus empresas — el único router sin prefijo propio;
-recibe `/api/v1/wallet` al registrarse en `main.py`).
+recibe `/api/v1/wallet` al registrarse en `main.py`),
+`qr` (`/api/v1/qr/...` — escaneo público: info de empresa, primera afiliación, validación de cupón
+por staff), `staff` (`/api/v1/staff/...` — flujos protegidos por `get_current_empresa_admin` para que
+el personal del local registre visitas/canjes de un cliente identificado por `codigo_cliente` o QR),
+`productos`/`ventas` (`/api/v1/productos/...`, `/api/v1/ventas/...` — catálogo, inventario y checkout
+del módulo Caja) y `pagos` (`/api/v1/pagos/...` — cobro simulado de la suscripción de la empresa a
+Welve, no un gateway real).
+
+`qr`/`staff` no mapean 1:1 a una colección propia: operan sobre `RelacionClienteEmpresa` y `Canje` a
+través de `services/visita_service.py` (único punto que incrementa `visitas_totales`, evalúa racha/
+segmento/recompensas — ver `recompensas_engine.py`) y `services/staff_service.py` (busca al cliente por
+`codigo_cliente`, formato `WLV-XXXX`).
+
+**Módulo Caja (POS)** — `productos`, `ventas`, `pagos`: routers protegidos con `get_current_empresa_admin`
+(mismo JWT de empresa que `staff`, no hay rol propio). `productos` es CRUD simple de catálogo/inventario
+(`services/producto_service.py`); `ventas` es el flujo de checkout y es el punto donde varios dominios se
+cruzan — `services/venta_service.py`:
+- `calcular_carrito()` (usada por `POST /ventas/calcular`, solo lectura) resuelve precios, valida un
+  `Cupon` opcional contra el carrito (`Cupon.aplica_a`: `todo` / `productos_especificos` /
+  `categoria`, más `monto_minimo_carrito` — distinto de `Cupon.monto_minimo`, que es por compra
+  individual) y calcula IGV (18%, `IGV_TASA`).
+- `procesar_venta()` (`POST /ventas`) repite ese cálculo y además, en una sola operación: descuenta
+  stock vía `producto_service.actualizar_stock()` (crea un `MovimientoInventario` tipo `venta`), llama
+  a `visita_service.registrar_visita()` (misma lógica de racha/segmento que usa `staff`) y, si hubo
+  cupón, crea un `Canje` vía `canje_service.crear_canje()` — una venta con cupón deja tanto un
+  documento `Venta` como un `Canje` inmutable.
+`Cupon` tiene un `codigo` corto (`CUP-XXXX`, único global, sparse) para que Caja lo identifique sin
+buscarlo por nombre — mismo criterio de índice sparse que `Cliente.codigo_cliente`.
+
+`pagos` modela el cobro de la **suscripción de la empresa a Welve** (no es un gateway real):
+`pago_service._evaluar_resultado()` es una simulación determinística por número de tarjeta de prueba
+(`...4242` aprueba); nunca se persiste el número completo ni el CVV, solo `ultimos_4`/`marca_tarjeta`.
+No confundir con `ventas.metodo_pago`, que es el cobro al cliente final en el mostrador.
+
+**`codigo_cliente` es global**, vive en `Cliente.codigo_cliente` (índice único), no en
+`RelacionClienteEmpresa`: cualquier empresa que lo escanee/ingrese reconoce al cliente aunque nunca
+la haya visitado antes. Si tocas este flujo, ten en cuenta `scripts/migrate_codigo_cliente.py` — la
+migración one-off (2026-07) que movió el código de ser por-empresa a global; documenta el shape viejo
+por si aparece código o datos que aún asuman el modelo per-empresa.
+
+`Empresa` tiene `latitud`/`longitud` opcionales (feature de ubicación en mapa, Leaflet en el frontend
+vía `components/maps/`) — no confundir con datos de tenant-scoping.
+
+**Regla de anti-fraude (visitas/canjes)**: tras la afiliación inicial (`POST /qr/empresa/{id}/afiliar`,
+la única acción de auto-registro que puede hacer un cliente), el cliente **no puede** registrarse
+visitas a sí mismo — `POST /qr/visita/{empresa_id}` devuelve 403 siempre. Toda visita o canje
+posterior lo registra el staff de la empresa (`routers/staff.py`, JWT de empresa), identificando al
+cliente por `codigo_cliente` o escaneando su QR personal (`GET /wallet/mi-qr/{empresa_id}`).
 
 **Al agregar un nuevo módulo**, registrar el modelo Beanie en **dos lugares**:
 1. `app/db/mongodb.py` → lista `document_models` del `init_beanie()`
 2. `app/main.py` → `app.include_router(..., prefix="/api/v1")`
+
+**Motor de cupones flexibles** (`Cupon.visibilidad`: `publico` / `vip` / `por_reto` / `por_requisito` /
+`privado`) — no confundir con las recompensas automáticas de `recompensas_engine.py`, que otorgan y
+canjean un `Cupon` en el mismo paso (`canal=automatico` en `Canje`). Acá el cupón solo se **desbloquea**
+(crea un `CuponDesbloqueado`); el cliente todavía tiene que mostrar su QR para que staff lo canje:
+- `services/cupon_acceso_service.py` — solo lectura: `evaluar_acceso_cupon()` calcula si un cliente
+  puede ver/canjear un cupón dado y su progreso (`progreso_condicion_cupon()`, delega en
+  `services/progreso_service.py` para leer `HistorialVisita` cuando la condición es por período).
+  Un cupón `por_reto` referencia un `Reto` vía `Cupon.reto_id`; uno `por_requisito` trae su propia
+  condición inline en `Cupon.requisito` (`RequisitoAcceso`), sin depender de un `Reto`.
+- `services/cupon_desbloqueo_service.py` — solo escritura: `desbloquear_cupon()` (idempotente por el
+  índice único `(cliente_id, cupon_id)` de `CuponDesbloqueado`, evita duplicados en carreras) y
+  `verificar_y_desbloquear_cupones()`, llamado una vez tras cada visita/venta desde
+  `visita_service._evaluar_y_actualizar()`. Si `Cupon.notificar_al_desbloquear`, crea una `Notificacion`.
+- `services/cupon_validacion_service.py` — `es_canjeable()`: vigencia/estado/límite de usos/monto
+  mínimo, compartido tanto por el flujo de desbloqueo como por el canje final en `canje_service`.
+- `services/notificacion_service.py` — CRUD de lectura de `Notificacion` (listar no leídas, marcar
+  leída); solo `cupon_desbloqueo_service` las crea.
+
+Estos tres archivos de cupones (y `recompensas_engine.py`) están deliberadamente separados por una
+**convención del proyecto: ningún archivo de servicio debe superar ~200 líneas** — así se dividió lo
+que en otro repo sería un solo `cupon_service.py` gigante. Al extender esta lógica, seguir el mismo
+criterio de split (lectura vs. escritura vs. validación) en vez de amontonar todo en un archivo.
 
 ## Autenticación — tres roles separados
 
@@ -161,6 +250,8 @@ donde el cliente ve el agregado de todas sus empresas.
 
 La fuente de verdad de las dependencias está en `app/core/dependencies.py`.
 `app/core/deps.py` es un shim de compatibilidad que re-exporta todo desde allí — no editarlo directamente.
+`get_current_empresa` es un alias de `get_current_empresa_admin` (misma dependencia, dos nombres) — usar
+cualquiera de los dos es equivalente.
 
 **Magic link en desarrollo**: cuando `ENVIRONMENT=development`, el endpoint
 `POST /api/v1/auth/cliente/magic-link` devuelve `devToken` y `verifyUrl` directamente
@@ -177,6 +268,11 @@ El frontend almacena el token en `localStorage["welve_token"]`.
 - **Excepción**: `canje_service.crear_canje()` retorna `(canje, error_msg)` — si `error_msg is not None`, el router debe lanzar el HTTPException. Este patrón de tupla se usa cuando el servicio necesita comunicar fallas de negocio sin excepciones.
 - **IDs**: los modelos Beanie exponen `id` como `PydanticObjectId`; en schemas de respuesta se serializa como `str(obj.id)`.
 - **Nombres**: snake_case en Python y en campos de Mongo; camelCase en TypeScript/React.
+- **Formularios (frontend)**: `react-hook-form` + `zod` (`@hookform/resolvers/zod`), schema `z.object` definido
+  inline en el propio componente (no hay carpeta centralizada de schemas) — ver `pages/auth/LoginPage.tsx`.
+- **Tamaño de archivo (backend)**: los servicios se mantienen bajo ~200 líneas por convención; un
+  servicio que crece de más se divide por responsabilidad (lectura/escritura/validación) en vez de
+  seguir creciendo — ver el motor de cupones flexibles arriba como ejemplo del patrón.
 
 ## Estructura del proyecto
 
@@ -196,6 +292,18 @@ Las páginas consumen hooks, nunca llaman a `api/` directamente.
 
 ## Worker Celery
 
-Archivo: `backend/app/worker/tasks.py`. Estado actual: stubs de notificación
-(`enviar_whatsapp`, `enviar_email`) sin integración real — pendientes de conectar
-con WhatsApp Cloud API y SendGrid/Resend respectivamente.
+Archivo: `backend/app/worker/tasks.py`. `enviar_whatsapp`/`enviar_email` son stubs
+sin integración real — pendientes de conectar con WhatsApp Cloud API y
+SendGrid/Resend respectivamente.
+
+Además hay 4 jobs periódicos programados en `app/worker/celery_app.py`
+(`conf.beat_schedule`, requiere correr el worker con `-B` — ver comando arriba):
+`romper_rachas` (diario), `expirar_cupones` (diario), `evaluar_exclusivos`
+(diario, sube/baja el segmento VIP según `EmpresaConfig.umbral_exclusivo_*` y
+`dias_gracia_exclusivo`) y `notificar_retos_activos` (cada 15 min). Cada uno es
+un wrapper `@celery_app.task` sync que llama `asyncio.run(...)` sobre una función
+`async` reusable en su servicio de dominio (`visita_service.romper_rachas_inactivas`,
+`cupon_service.expirar_cupones_vencidos`, `segmento_service.evaluar_exclusivos_todas_empresas`,
+`reto_service.notificar_retos_pendientes`) — cada invocación crea su propio
+cliente Motor vía `init_db()` para evitar reusar una conexión entre event loops
+distintos.

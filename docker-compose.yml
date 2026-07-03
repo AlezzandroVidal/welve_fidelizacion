@@ -47,7 +47,7 @@ services:
     build:
       context: ./backend
       target: production
-    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    command: celery -A app.worker.celery_app worker -B --loglevel=info --concurrency=2
     restart: unless-stopped
     env_file: .env
     environment:

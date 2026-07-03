@@ -4,7 +4,6 @@ import { useToast } from "../../hooks/useToast";
 import { Toaster } from "../../components/ui";
 import QRVisitaCard from "../../components/admin/qr/QRVisitaCard";
 import CuponesQRList from "../../components/admin/qr/CuponesQRList";
-import RecompensasAutomaticas from "../../components/admin/qr/RecompensasAutomaticas";
 
 export default function QRPage() {
   const { data: empresa, isLoading } = useEmpresaMe();
@@ -21,13 +20,15 @@ export default function QRPage() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-gray-900">Mis QR Codes</h1>
-          <p className="text-xs text-gray-400">Conecta tu local físico con Welve</p>
+          <p className="text-xs text-gray-400">
+            Conecta tu local físico con Welve — los beneficios automáticos por historial se
+            configuran ahora como cupones (pestaña Cupones → Visibilidad y acceso → "Por requisito").
+          </p>
         </div>
       </div>
 
       <QRVisitaCard empresaId={empresa.id} empresaNombre={empresa.nombre} />
       <CuponesQRList />
-      <RecompensasAutomaticas onSuccess={toast.success} onError={toast.error} />
 
       <Toaster toasts={toast.toasts} onDismiss={toast.dismiss} />
     </main>

@@ -9,12 +9,11 @@ from app.models.cupon import Cupon
 from app.schemas.canje import CanjeCreate, CanjeResponse
 from app.services import canje_service
 from beanie.operators import In
-from app.services import canje_service
 
 router = APIRouter(prefix="/canjes", tags=["canjes"])
 
 
-def _to_response(c, cliente_nombre: str = None, cupon_nombre: str = None) -> CanjeResponse:
+def _to_response(c, cliente: Cliente | None = None, cupon: Cupon | None = None) -> CanjeResponse:
     return CanjeResponse(
         id=str(c.id),
         empresaId=str(c.empresa_id),
@@ -23,23 +22,26 @@ def _to_response(c, cliente_nombre: str = None, cupon_nombre: str = None) -> Can
         fecha=c.fecha,
         canal=c.canal,
         staffRef=c.staff_ref,
-        clienteNombre=cliente_nombre,
-        cuponNombre=cupon_nombre,
+        clienteNombre=cliente.nombre if cliente else None,
+        clienteCodigo=cliente.codigo_cliente if cliente else None,
+        cuponNombre=cupon.nombre if cupon else None,
+        cuponTipo=cupon.tipo if cupon else None,
+        cuponValor=cupon.valor if cupon else None,
     )
 
 async def _hydrate_canjes(canjes):
     if not canjes:
         return []
-    
+
     cliente_ids = list({c.cliente_id for c in canjes})
     cupon_ids = list({c.cupon_id for c in canjes})
-    
+
     clientes = await Cliente.find(In(Cliente.id, cliente_ids)).to_list()
     cupones = await Cupon.find(In(Cupon.id, cupon_ids)).to_list()
-    
-    cmap = {c.id: c.nombre for c in clientes}
-    cupmap = {c.id: c.nombre for c in cupones}
-    
+
+    cmap = {c.id: c for c in clientes}
+    cupmap = {c.id: c for c in cupones}
+
     return [_to_response(c, cmap.get(c.cliente_id), cupmap.get(c.cupon_id)) for c in canjes]
 
 

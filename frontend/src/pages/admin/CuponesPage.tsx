@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Ticket, Plus, MoreVertical, Star, LayoutGrid, LayoutList } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Ticket, Plus, MoreVertical, Star, Sparkles, LayoutGrid, LayoutList } from "lucide-react";
 import type { Cupon, EstadoCupon } from "../../api/cupones";
 import { useCupones, useDeleteCupon, usePausarCupon, useActivarCupon } from "../../hooks/useCupones";
 import { useToast } from "../../hooks/useToast";
@@ -47,7 +48,8 @@ function ActionMenu({ cupon, onView, onEdit, onDelete }: {
             { label: cupon.estado === "activo" ? "Pausar" : "Activar",
               action: async () => {
                 setOpen(false);
-                cupon.estado === "activo" ? await pausar.mutateAsync(cupon.id) : await activar.mutateAsync(cupon.id);
+                if (cupon.estado === "activo") await pausar.mutateAsync(cupon.id);
+                else await activar.mutateAsync(cupon.id);
               },
             },
             { label: "Eliminar", disabled: cupon.usosActuales > 0, action: () => { onDelete(); setOpen(false); }, danger: true },
@@ -73,10 +75,13 @@ function ActionMenu({ cupon, onView, onEdit, onDelete }: {
 /* ── Grid card ───────────────────────────────────────────────────────────── */
 
 const TIPO_GRADIENT: Record<string, string> = {
-  descuento_porcentual: "from-blue-50 to-blue-100/50",
-  descuento_fijo:       "from-green-50 to-green-100/50",
-  producto_gratis:      "from-welve-50 to-welve-100/50",
-  dos_por_uno:          "from-orange-50 to-orange-100/50",
+  porcentual:      "from-blue-50 to-blue-100/50",
+  monto_fijo:      "from-green-50 to-green-100/50",
+  producto_gratis: "from-welve-50 to-welve-100/50",
+  dos_por_uno:     "from-orange-50 to-orange-100/50",
+  n_por_m:         "from-orange-50 to-orange-100/50",
+  envio_gratis:    "from-sky-50 to-sky-100/50",
+  personalizado:   "from-gray-50 to-gray-100/50",
 };
 
 function CuponCard({ c, onClick }: { c: Cupon; onClick: () => void }) {
@@ -90,10 +95,19 @@ function CuponCard({ c, onClick }: { c: Cupon; onClick: () => void }) {
         <div className="flex items-start justify-between gap-2 mb-3">
           <div>
             <p className="text-sm font-bold text-gray-900 leading-tight">{c.nombre}</p>
+            {c.codigo && <p className="mt-0.5 font-mono text-[10px] text-gray-400">{c.codigo}</p>}
             <div className="flex items-center gap-1.5 mt-1.5">
               <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${TIPO_COLOR[c.tipo]}`}>{TIPO_LABEL[c.tipo]}</span>
-              {c.exclusivo && <Star size={11} className="text-amber-400 fill-amber-400" />}
+              {c.visibilidad === "vip" && <Star size={11} className="text-amber-400 fill-amber-400" />}
+              {c.destacado && <Sparkles size={11} className="text-welve-500" />}
             </div>
+            {c.tags.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {c.tags.map((t) => (
+                  <span key={t} className="rounded bg-white/70 px-1 py-0.5 text-[9px] font-medium text-gray-500">#{t}</span>
+                ))}
+              </div>
+            )}
           </div>
           <Badge color={c.estado === "activo" ? "green" : c.estado === "pausado" ? "yellow" : "gray"} size="sm" dot>
             {ESTADO_LABEL[c.estado]}
@@ -102,7 +116,7 @@ function CuponCard({ c, onClick }: { c: Cupon; onClick: () => void }) {
 
         {c.valor !== null && (
           <p className="text-2xl font-black text-gray-800 tabular mb-3">
-            {c.tipo === "descuento_porcentual" ? `${c.valor}%` : `S/ ${c.valor}`}
+            {c.tipo === "porcentual" ? `${c.valor}%` : `S/ ${c.valor}`}
           </p>
         )}
 
@@ -155,6 +169,18 @@ export default function CuponesPage() {
   const toast                     = useToast();
   const deleteMut                 = useDeleteCupon();
   const { data: all = [], isLoading } = useCupones();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link desde TopCuponesWidget del dashboard (?cupon=<id>): abre el
+  // detalle directo apenas cargan los cupones, sin dejar el param pegado en la URL.
+  useEffect(() => {
+    const cuponId = searchParams.get("cupon");
+    if (!cuponId || !all.length) return;
+    const match = all.find((c) => c.id === cuponId);
+    if (match) setDetalle(match);
+    setSearchParams((prev) => { prev.delete("cupon"); return prev; }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all.length]);
 
   function switchView(v: View) {
     setView(v);
@@ -276,18 +302,29 @@ export default function CuponesPage() {
               {cupones.map((c) => (
                 <Table.Row key={c.id} onClick={() => setDetalle(c)}>
                   <Table.Cell>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-gray-800">{c.nombre}</span>
-                      {c.exclusivo && <Star size={12} className="text-amber-400 fill-amber-400 flex-shrink-0" />}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-gray-800">{c.nombre}</span>
+                        {c.visibilidad === "vip" && <Star size={12} className="text-amber-400 fill-amber-400 flex-shrink-0" />}
+                        {c.destacado && <Sparkles size={12} className="text-welve-500 flex-shrink-0" />}
+                      </div>
+                      {c.codigo && <span className="font-mono text-[10px] text-gray-400">{c.codigo}</span>}
+                      {c.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {c.tags.map((t) => (
+                            <span key={t} className="rounded bg-gray-100 px-1 py-0.5 text-[9px] font-medium text-gray-500">#{t}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </Table.Cell>
                   <Table.Cell>
-                    <Badge color={c.tipo === "descuento_porcentual" ? "blue" : c.tipo === "descuento_fijo" ? "green" : c.tipo === "producto_gratis" ? "purple" : "orange"} size="sm">
+                    <Badge color={c.tipo === "porcentual" ? "blue" : c.tipo === "monto_fijo" ? "green" : c.tipo === "producto_gratis" ? "purple" : "orange"} size="sm">
                       {TIPO_LABEL[c.tipo]}
                     </Badge>
                   </Table.Cell>
                   <Table.Cell className="text-sm text-gray-700 tabular">
-                    {c.valor !== null ? (c.tipo === "descuento_porcentual" ? `${c.valor}%` : `S/ ${c.valor}`) : "—"}
+                    {c.valor !== null ? (c.tipo === "porcentual" ? `${c.valor}%` : `S/ ${c.valor}`) : "—"}
                   </Table.Cell>
                   <Table.Cell className="text-xs text-gray-500">{fmtFecha(c.fechaExpiracion)}</Table.Cell>
                   <Table.Cell>

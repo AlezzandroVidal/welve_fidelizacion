@@ -82,6 +82,14 @@ export default function CuponDetalle({ cupon, onClose, onEdit, onSuccess, onErro
 
         {cupon && (
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            {cupon.imagenUrl && (
+              <img
+                src={cupon.imagenUrl}
+                alt={cupon.nombre}
+                className="h-36 w-full rounded-xl object-cover"
+              />
+            )}
+
             {/* Info principal */}
             <div>
               <div className="flex items-start justify-between gap-2">
@@ -90,15 +98,58 @@ export default function CuponDetalle({ cupon, onClose, onEdit, onSuccess, onErro
                   {ESTADO_LABEL[cupon.estado]}
                 </span>
               </div>
+              {cupon.codigo && (
+                <p className="mt-1 font-mono text-xs text-gray-400">{cupon.codigo}</p>
+              )}
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${TIPO_COLOR[cupon.tipo]}`}>
                   {TIPO_LABEL[cupon.tipo]}
                 </span>
-                {cupon.exclusivo && (
+                {cupon.visibilidad === "vip" && (
                   <span className="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">VIP</span>
                 )}
+                {cupon.destacado && (
+                  <span className="rounded-md bg-welve-100 px-2 py-0.5 text-xs font-semibold text-welve-700">Destacado</span>
+                )}
+                {cupon.colorTema && (
+                  <span
+                    className="h-5 w-5 rounded-full border border-gray-200"
+                    style={{ backgroundColor: cupon.colorTema }}
+                    title={cupon.colorTema}
+                  />
+                )}
               </div>
+              {cupon.tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {cupon.tags.map((t) => (
+                    <span key={t} className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {cupon.descripcionLarga && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Descripción</h4>
+                <p className="text-sm text-gray-600 leading-relaxed">{cupon.descripcionLarga}</p>
+              </div>
+            )}
+
+            {cupon.instruccionesCanje && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Instrucciones de canje</h4>
+                <p className="text-sm text-gray-600 leading-relaxed">{cupon.instruccionesCanje}</p>
+              </div>
+            )}
+
+            {cupon.terminosCondiciones && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Términos y condiciones</h4>
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{cupon.terminosCondiciones}</p>
+              </div>
+            )}
 
             {/* Valor y condiciones */}
             <div className="rounded-xl bg-welve-50 p-4 space-y-2">
@@ -106,7 +157,7 @@ export default function CuponDetalle({ cupon, onClose, onEdit, onSuccess, onErro
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Valor</span>
                   <span className="font-semibold text-gray-900">
-                    {cupon.tipo === "descuento_porcentual" ? `${cupon.valor}%` : `S/ ${cupon.valor}`}
+                    {cupon.tipo === "porcentual" ? `${cupon.valor}%` : `S/ ${cupon.valor}`}
                   </span>
                 </div>
               )}
@@ -170,6 +221,22 @@ export default function CuponDetalle({ cupon, onClose, onEdit, onSuccess, onErro
                 </div>
               )}
             </div>
+
+            {/* Código para la Caja — texto plano, no barcode: los barcodes son
+                solo para productos de inventario, los cupones usan QR/código. */}
+            {cupon.codigo && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Código para la Caja</h4>
+                <p className="text-xs text-gray-400 mb-3">
+                  El staff puede escribir o escanear este código en la Caja para aplicarlo directamente.
+                </p>
+                <div className="rounded-2xl bg-gray-100 py-3">
+                  <p className="text-center text-2xl font-mono font-black tracking-[0.2em] text-gray-800">
+                    {cupon.codigo}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* QR de este cupón */}
             <div>

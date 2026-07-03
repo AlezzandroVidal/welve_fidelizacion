@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Target, Plus, Calendar, Gift, Activity, Clock, CheckCircle2 } from "lucide-react";
-import { useRetos } from "../../hooks/useRetos";
+import { useEffect, useRef, useState } from "react";
+import { Target, Plus, Calendar, Gift, Activity, Clock, CheckCircle2, MoreVertical, Ban } from "lucide-react";
+import { useRetos, useCancelarReto, useReactivarReto } from "../../hooks/useRetos";
 import { useToast } from "../../hooks/useToast";
 import type { Reto } from "../../api/retos";
 import RetoModal from "../../components/admin/retos/RetoModal";
@@ -8,26 +8,28 @@ import { Table, Badge, Sheet, Toaster } from "../../components/ui";
 
 /* ── Types & Helpers ─────────────────────────────────────────────────────── */
 
-type RetoEstado    = "activo" | "programado" | "finalizado";
+type RetoEstado    = "activo" | "programado" | "finalizado" | "cancelado";
 type RetoConEstado = Reto & { estado: RetoEstado };
 
 function getEstado(r: Reto): RetoEstado {
+  if (r.cancelado) return "cancelado";
   const now = new Date(), inicio = new Date(r.fechaInicio), fin = new Date(r.fechaFin);
   if (now < inicio) return "programado";
   if (now > fin)    return "finalizado";
   return "activo";
 }
 
-const ESTADO_COLOR: Record<RetoEstado, "green" | "blue" | "gray"> = {
-  activo: "green", programado: "blue", finalizado: "gray",
+const ESTADO_COLOR: Record<RetoEstado, "green" | "blue" | "gray" | "red"> = {
+  activo: "green", programado: "blue", finalizado: "gray", cancelado: "red",
 };
 const ESTADO_LABEL: Record<RetoEstado, string> = {
-  activo: "Activo", programado: "Programado", finalizado: "Finalizado",
+  activo: "Activo", programado: "Programado", finalizado: "Finalizado", cancelado: "Cancelado",
 };
 const ESTADO_ICON: Record<RetoEstado, React.ReactElement> = {
   activo:     <Activity size={11} />,
   programado: <Clock size={11} />,
   finalizado: <CheckCircle2 size={11} />,
+  cancelado:  <Ban size={11} />,
 };
 
 function fmtDate(iso: string) {
@@ -37,16 +39,84 @@ function fmtShort(iso: string) {
   return new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short" });
 }
 
+const CONDICION_LABEL: Record<Reto["condicionTipo"], string> = {
+  num_visitas: "Número de visitas",
+  visitas_en_periodo: "Visitas en período",
+  monto_acumulado: "Monto acumulado",
+  monto_en_periodo: "Monto en período",
+  productos_comprados: "Productos comprados",
+  puntos_acumulados: "Puntos acumulados",
+  monto_en_productos: "Gasto en productos/categoría",
+};
+
+function condicionResumen(reto: Reto): { valor: string; label: string } {
+  const esMonto = reto.condicionTipo === "monto_acumulado" || reto.condicionTipo === "monto_en_periodo"
+    || reto.condicionTipo === "monto_en_productos";
+  const valor = esMonto ? `S/ ${reto.condicionValor}` : `${reto.condicionValor}`;
+  const sufijoPeriodo = reto.periodoDias ? ` / ${reto.periodoDias}d` : "";
+  return { valor: `${valor}${sufijoPeriodo}`, label: CONDICION_LABEL[reto.condicionTipo] };
+}
+
 const FILTROS: { label: string; value: "todos" | RetoEstado }[] = [
   { label: "Todos",       value: "todos"      },
   { label: "Activos",     value: "activo"     },
   { label: "Programados", value: "programado" },
   { label: "Finalizados", value: "finalizado" },
+  { label: "Cancelados",  value: "cancelado"  },
 ];
 
 const TABLE_COLS = [
-  { label: "Reto" }, { label: "Condición" }, { label: "Período" }, { label: "Recompensa" }, { label: "Estado" },
+  { label: "Reto" }, { label: "Condición" }, { label: "Período" }, { label: "Recompensa" }, { label: "Estado" }, { label: "" },
 ];
+
+/* ── Action menu ─────────────────────────────────────────────────────────── */
+
+function ActionMenu({ reto, onView, onEdit }: { reto: RetoConEstado; onView: () => void; onEdit: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const cancelar = useCancelarReto();
+  const reactivar = useReactivarReto();
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors active:scale-95"
+      >
+        <MoreVertical size={16} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-8 z-30 w-44 rounded-xl border border-gray-100 bg-white py-1 shadow-lg animate-scale-in origin-top-right">
+          {[
+            { label: "Ver detalle", action: () => { onView(); setOpen(false); } },
+            { label: "Editar", disabled: reto.estado === "cancelado", action: () => { onEdit(); setOpen(false); } },
+            reto.estado === "cancelado"
+              ? { label: "Reactivar", action: async () => { setOpen(false); await reactivar.mutateAsync(reto.id); } }
+              : { label: "Cancelar reto", action: async () => { setOpen(false); await cancelar.mutateAsync(reto.id); }, danger: true },
+          ].map((item) => (
+            <button
+              key={item.label}
+              onClick={item.action}
+              disabled={"disabled" in item ? item.disabled : false}
+              className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50
+                ${"danger" in item && item.danger ? "text-red-500 hover:bg-red-50" : "text-gray-700"}
+                ${"disabled" in item && item.disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ── Detalle Sheet ───────────────────────────────────────────────────────── */
 
@@ -69,12 +139,8 @@ function RetoDetalle({ reto, onClose }: { reto: RetoConEstado | null; onClose: (
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-welve-50 p-4">
               <p className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Condición</p>
-              <p className="text-sm font-bold text-gray-900">
-                {reto.condicionTipo === "num_visitas" ? `${reto.condicionValor} visitas` : `S/ ${reto.condicionValor}`}
-              </p>
-              <p className="text-[10px] text-gray-500 mt-0.5">
-                {reto.condicionTipo === "num_visitas" ? "Visitas requeridas" : "Monto acumulado"}
-              </p>
+              <p className="text-sm font-bold text-gray-900">{condicionResumen(reto).valor}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">{condicionResumen(reto).label}</p>
             </div>
             {reto.estado === "activo" ? (
               <div className="rounded-xl bg-green-50 p-4">
@@ -131,6 +197,7 @@ export default function RetosPage() {
   const [filtro,    setFiltro]    = useState<"todos" | RetoEstado>("todos");
   const [modalOpen, setModalOpen] = useState(false);
   const [detalle,   setDetalle]   = useState<RetoConEstado | null>(null);
+  const [editando,  setEditando]  = useState<Reto | null>(null);
 
   const withEstado: RetoConEstado[] = retos.map((r) => ({ ...r, estado: getEstado(r) }));
   const counts: Record<string, number> = {
@@ -138,6 +205,7 @@ export default function RetosPage() {
     activo:     withEstado.filter((r) => r.estado === "activo").length,
     programado: withEstado.filter((r) => r.estado === "programado").length,
     finalizado: withEstado.filter((r) => r.estado === "finalizado").length,
+    cancelado:  withEstado.filter((r) => r.estado === "cancelado").length,
   };
   const filtrados = filtro === "todos" ? withEstado : withEstado.filter((r) => r.estado === filtro);
 
@@ -180,7 +248,7 @@ export default function RetosPage() {
       <Table.Root>
         <Table.Header cols={TABLE_COLS} />
         {isLoading ? (
-          <Table.Loading cols={5} />
+          <Table.Loading cols={6} />
         ) : !filtrados.length ? (
           <Table.Empty
             icon={<Target size={36} />}
@@ -205,12 +273,8 @@ export default function RetosPage() {
                   </div>
                 </Table.Cell>
                 <Table.Cell>
-                  <span className="text-sm text-gray-700">
-                    {r.condicionTipo === "num_visitas" ? `${r.condicionValor} visitas` : `S/ ${r.condicionValor}`}
-                  </span>
-                  <p className="text-[10px] text-gray-400">
-                    {r.condicionTipo === "num_visitas" ? "Número de visitas" : "Monto acumulado"}
-                  </p>
+                  <span className="text-sm text-gray-700">{condicionResumen(r).valor}</span>
+                  <p className="text-[10px] text-gray-400">{condicionResumen(r).label}</p>
                 </Table.Cell>
                 <Table.Cell>
                   <div className="flex items-center gap-1 text-sm text-gray-700">
@@ -233,6 +297,9 @@ export default function RetosPage() {
                     {ESTADO_LABEL[r.estado]}
                   </Badge>
                 </Table.Cell>
+                <Table.Cell>
+                  <ActionMenu reto={r} onView={() => setDetalle(r)} onEdit={() => setEditando(r)} />
+                </Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
@@ -240,9 +307,10 @@ export default function RetosPage() {
       </Table.Root>
 
       <RetoModal
-        key={modalOpen ? "reto-open" : "reto-closed"}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        key={editando ? `reto-edit-${editando.id}` : modalOpen ? "reto-open" : "reto-closed"}
+        open={modalOpen || !!editando}
+        reto={editando}
+        onClose={() => { setModalOpen(false); setEditando(null); }}
         onSuccess={toast.success}
         onError={toast.error}
       />

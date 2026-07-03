@@ -8,7 +8,7 @@ interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "typ
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   function Checkbox({ label, description, className = "", ...rest }, ref) {
     return (
-      <label className="flex items-start gap-3 cursor-pointer select-none group">
+      <label className={`flex items-start gap-3 cursor-pointer select-none group ${className}`}>
         {/* Hidden native input + custom visual */}
         <div className="relative mt-0.5 h-[18px] w-[18px] flex-shrink-0">
           <input

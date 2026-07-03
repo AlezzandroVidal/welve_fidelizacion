@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -10,6 +12,7 @@ from app.models.relacion import RelacionClienteEmpresa
 from app.models.welve_admin import WelveAdmin
 
 bearer = HTTPBearer()
+_bearer_opcional = HTTPBearer(auto_error=False)
 
 
 async def get_current_empresa_admin(
@@ -76,6 +79,23 @@ async def get_global_cliente(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Cliente no encontrado")
 
     return cliente
+
+
+async def get_optional_cliente(
+    creds: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_opcional),
+) -> Optional[Cliente]:
+    """Variante de get_global_cliente para endpoints públicos auth-aware: nunca
+    levanta 401, devuelve None si no hay token o es inválido/no es de cliente."""
+    if creds is None:
+        return None
+    payload = decode_token(creds.credentials)
+    if not payload or payload.get("rol") != "cliente":
+        return None
+    try:
+        cliente_id = PydanticObjectId(payload["sub"])
+    except Exception:
+        return None
+    return await Cliente.get(cliente_id)
 
 
 async def get_current_super_admin(

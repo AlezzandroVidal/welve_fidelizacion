@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authApi } from "../../api/auth";
 import { useAuth } from "../../context/AuthContext";
+import logoWelveIcon from "../../resources/logo_welve_icon.png";
 
 type State = "verifying" | "success" | "error";
 
@@ -41,7 +42,7 @@ export default function VerifyPage() {
     <div className="min-h-screen bg-welve-100 flex items-center justify-center p-4">
       <div className="w-full max-w-sm text-center animate-fade-up">
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-welve-500 shadow-lg mb-4">
-          <span className="text-2xl font-black text-white">W</span>
+          <img src={logoWelveIcon} alt="Welve" className="h-7 w-7 object-contain" />
         </div>
 
         {state === "verifying" && (

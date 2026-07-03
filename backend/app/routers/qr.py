@@ -10,14 +10,14 @@ from app.models.empresa import Empresa
 from app.models.enums import CanalCanje, EstadoCupon, EstadoEmpresa
 from app.schemas.canje import CanjeResponse
 from app.schemas.qr import (
+    AfiliarResponse,
     EmpresaInfoResponse,
     RegistroQRRequest,
-    RegistroQRResponse,
     ResultadoVisitaResponse,
     ValidarCuponRequest,
     ValidarCuponResponse,
 )
-from app.services import canje_service, cliente_service, cupon_service, empresa_service, visita_service
+from app.services import canje_service, cupon_service, empresa_service, visita_service
 
 router = APIRouter(prefix="/qr", tags=["qr"])
 
@@ -82,42 +82,41 @@ async def info_empresa(empresa_id: str):
     )
 
 
-@router.post("/empresa/{empresa_id}/registro", response_model=RegistroQRResponse)
-async def registro_qr(empresa_id: str, data: RegistroQRRequest):
-    """Público — primer contacto de un cliente nuevo (o sin sesión) al escanear el QR de empresa."""
+@router.post("/empresa/{empresa_id}/afiliar", response_model=AfiliarResponse)
+async def afiliar(empresa_id: str, data: RegistroQRRequest):
+    """Público — la ÚNICA acción que el cliente puede hacer por sí mismo: la
+    primera visita (afiliación). Todo lo que pasa después lo registra el staff
+    (ver routers/staff.py). 409 si este cliente ya está afiliado a la empresa —
+    esta es la única afiliación que legítimamente debe rechazarse dos veces;
+    no confundir con validar_cupon() más abajo, que crea la relación
+    silenciosamente si no existe en vez de 409ear."""
     eid = _parse_id(empresa_id, "empresa_id")
     await _requerir_empresa_activa(eid)
 
-    resultado = await visita_service.registrar_visita_con_registro(
+    resultado = await visita_service.afiliar_cliente(
         nombre=data.nombre, email=data.email, whatsapp=data.whatsapp, empresa_id=eid,
     )
-    return RegistroQRResponse(
+    if resultado is None:
+        raise HTTPException(status_code=409, detail="Ya estás afiliado a esta empresa")
+
+    return AfiliarResponse(
         accessToken=resultado["jwt"],
         clienteId=resultado["cliente"]["id"],
+        codigoCliente=resultado["codigo_cliente"],
         resultado=_resultado_to_response(resultado["resultado_visita"]),
     )
 
 
 @router.post("/visita/{empresa_id}", response_model=ResultadoVisitaResponse)
 async def registrar_visita(empresa_id: str, cliente: Cliente = Depends(get_global_cliente)):
-    """Cliente ya logueado (en cualquier empresa) registra una visita adicional vía QR."""
-    eid = _parse_id(empresa_id, "empresa_id")
-    await _requerir_empresa_activa(eid)
-
-    relacion = await cliente_service.obtener_o_crear_relacion(eid, cliente.id)
-    if visita_service.ya_visito_hoy(relacion):
-        return _resultado_to_response({
-            "visitas_totales": relacion.visitas_totales,
-            "racha_actual": relacion.racha_actual,
-            "recompensas_desbloqueadas": [],
-            "retos_completados": [],
-            "subio_a_exclusivo": False,
-            "mensaje": "Ya registraste tu visita hoy. ¡Vuelve mañana!",
-            "ya_registrado_hoy": True,
-        })
-
-    resultado = await visita_service.registrar_visita(cliente.id, eid, canal="qr")
-    return _resultado_to_response(resultado)
+    """Deshabilitado — regla de anti-fraude: el cliente no puede auto-registrar
+    visitas después de afiliarse. Las visitas las registra el staff desde
+    /api/v1/staff/visita/* (por código o escaneando el QR del cliente)."""
+    raise HTTPException(
+        status_code=403,
+        detail="Las visitas las registra el staff del local, no el cliente. "
+               "Muéstrale tu código o tu QR personal (/wallet/mi-qr).",
+    )
 
 
 @router.post("/cupon/{cupon_id}/validar", response_model=ValidarCuponResponse)
@@ -129,26 +128,28 @@ async def validar_cupon(
     Orden importa: primero se intenta el canje (sin tocar la relación); solo si
     el canje tuvo éxito se registra la visita completa (racha/segmento/retos/
     recompensas). Así un cupón no canjeable no deja un estado a medias.
+
+    No exige que el cliente esté afiliado de antemano: si es su primera
+    interacción con esta empresa, crear_canje()/registrar_visita() crean la
+    RelacionClienteEmpresa como efecto secundario (a diferencia del 409 de
+    /empresa/{id}/afiliar arriba, que sí es un rechazo legítimo por duplicado).
     """
     cid = _parse_id(cupon_id, "cupon_id")
     cliente_id = _parse_id(data.cliente_id, "cliente_id")
-
-    par = await cliente_service.obtener_cliente_empresa(empresa.id, cliente_id)
-    if par is None:
-        raise HTTPException(status_code=404, detail="Cliente no tiene relación con esta empresa")
 
     canje, error = await canje_service.crear_canje(
         empresa_id=empresa.id,
         cliente_id=cliente_id,
         cupon_id=cid,
         canal=CanalCanje.qr,
-        staff_ref=empresa.admin_email,
+        staff_ref=None,  # el canal=qr ya identifica que lo validó el staff
         registrar_visita=False,
+        monto=data.monto,
     )
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    resultado_visita = await visita_service.registrar_visita(cliente_id, empresa.id, canal="qr")
+    resultado_visita = await visita_service.registrar_visita(cliente_id, empresa.id, canal="qr", monto=data.monto)
 
     return ValidarCuponResponse(
         canje=CanjeResponse(

@@ -9,18 +9,12 @@ export function useEmpresaInfoQR(empresaId: string | null) {
   });
 }
 
-export function useRegistroQR() {
+export function useAfiliar() {
   return useMutation({
     mutationFn: ({ empresaId, data }: {
       empresaId: string;
       data: { nombre: string; email?: string; whatsapp?: string };
-    }) => qrApi.registro(empresaId, data).then((r) => r.data),
-  });
-}
-
-export function useVisitaQR() {
-  return useMutation({
-    mutationFn: (empresaId: string) => qrApi.visita(empresaId).then((r) => r.data),
+    }) => qrApi.afiliar(empresaId, data).then((r) => r.data),
   });
 }
 

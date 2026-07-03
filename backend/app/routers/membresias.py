@@ -12,6 +12,7 @@ from app.schemas.membresia import (
     MembresiaClienteUpdate,
     MembresiaCreate,
     MembresiaResponse,
+    MembresiaUpdate,
 )
 from app.services import membresia_service
 
@@ -59,6 +60,45 @@ async def crear_membresia(data: MembresiaCreate, empresa: Empresa = Depends(get_
 async def listar_membresias(empresa: Empresa = Depends(get_current_empresa)):
     membresias = await membresia_service.listar_membresias(empresa.id)
     return [_mem_response(m) for m in membresias]
+
+
+def _parse_id(membresia_id: str) -> PydanticObjectId:
+    try:
+        return PydanticObjectId(membresia_id)
+    except Exception:
+        raise HTTPException(status_code=422, detail="membresia_id inválido")
+
+
+@router.patch("/{membresia_id}", response_model=MembresiaResponse)
+async def actualizar_membresia(membresia_id: str, data: MembresiaUpdate, empresa: Empresa = Depends(get_current_empresa)):
+    membresia = await membresia_service.actualizar_membresia(empresa.id, _parse_id(membresia_id), data)
+    if not membresia:
+        raise HTTPException(status_code=404, detail="Membresía no encontrada")
+    return _mem_response(membresia)
+
+
+@router.post("/{membresia_id}/pausar", response_model=MembresiaResponse)
+async def pausar_membresia(membresia_id: str, empresa: Empresa = Depends(get_current_empresa)):
+    membresia = await membresia_service.pausar_membresia(empresa.id, _parse_id(membresia_id))
+    if not membresia:
+        raise HTTPException(status_code=404, detail="Membresía no encontrada")
+    return _mem_response(membresia)
+
+
+@router.post("/{membresia_id}/activar", response_model=MembresiaResponse)
+async def activar_membresia(membresia_id: str, empresa: Empresa = Depends(get_current_empresa)):
+    membresia = await membresia_service.activar_membresia(empresa.id, _parse_id(membresia_id))
+    if not membresia:
+        raise HTTPException(status_code=404, detail="Membresía no encontrada")
+    return _mem_response(membresia)
+
+
+@router.delete("/{membresia_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def eliminar_membresia(membresia_id: str, empresa: Empresa = Depends(get_current_empresa)):
+    ok, error = await membresia_service.eliminar_membresia(empresa.id, _parse_id(membresia_id))
+    if not ok:
+        codigo = 404 if error == "Membresía no encontrada" else 400
+        raise HTTPException(status_code=codigo, detail=error)
 
 
 @router.post("/suscripciones", response_model=MembresiaClienteResponse, status_code=status.HTTP_201_CREATED)
