@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Gift, Check, ScanBarcode, AlertTriangle } from "lucide-react";
+import { ScanBarcode, AlertTriangle } from "lucide-react";
 import { cuponesApi, type Cupon } from "../../../api/cupones";
 import type { ItemCarritoInput } from "../../../api/caja";
 import { useCuponesValidosParaCarrito } from "../../../hooks/useCupones";
@@ -20,11 +20,14 @@ interface Props {
   onQuitar: () => void;
 }
 
-const TIPO_LABEL: Record<string, string> = {
-  porcentual: "% de descuento", monto_fijo: "Descuento fijo",
-  producto_gratis: "Producto gratis", dos_por_uno: "2×1",
-  n_por_m: "NxM", envio_gratis: "Envío gratis", personalizado: "Personalizado",
-};
+/** Chip corto: para porcentual/monto_fijo antepone el valor (ej. "15% OFF"),
+ * el resto usa el nombre truncado — no todos los tipos tienen un "valor"
+ * que se lea bien como prefijo (producto_gratis, dos_por_uno, etc). */
+function chipLabel(c: Cupon): string {
+  if (c.tipo === "porcentual" && c.valor) return `${c.valor}% OFF`;
+  if (c.tipo === "monto_fijo" && c.valor) return `S/${c.valor} OFF`;
+  return c.nombre.length > 22 ? `${c.nombre.slice(0, 22)}…` : c.nombre;
+}
 
 export default function CuponesDisponibles({
   items, clienteId, cuponesCliente, cuponAplicado, erroresCupon, onAplicar, onQuitar,
@@ -64,44 +67,25 @@ export default function CuponesDisponibles({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {hayCarrito && isLoading ? (
         <p className="text-xs text-gray-400">Buscando beneficios...</p>
       ) : !cupones.length ? (
-        <p className="text-xs text-gray-400">Sin cupones aplicables a este carrito</p>
+        <p className="text-xs text-gray-400">Sin cupones disponibles</p>
       ) : (
-        <div className="space-y-2">
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
           {cupones.map((c) => {
             const aplicado = cuponAplicado?.id === c.id;
             return (
-              <div
+              <button
                 key={c.id}
-                className={`flex items-center gap-2.5 rounded-xl border p-2.5 ${aplicado ? "border-green-300 bg-green-50" : "border-gray-100"}`}
+                onClick={() => (aplicado ? onQuitar() : onAplicar(c))}
+                title={c.nombre}
+                className={`h-8 flex-shrink-0 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold transition-colors
+                  ${aplicado ? "bg-welve-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
               >
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-welve-100 text-welve-600">
-                  <Gift size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-gray-800">{c.nombre}</p>
-                  <p className="truncate text-[11px] text-gray-400">
-                    {TIPO_LABEL[c.tipo]}
-                    {c.valor ? ` · ${c.tipo === "porcentual" ? `${c.valor}%` : `S/${c.valor}`}` : ""}
-                    {c.codigo ? ` · ${c.codigo}` : ""}
-                  </p>
-                </div>
-                {aplicado ? (
-                  <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-green-500 px-2.5 py-1 text-[10px] font-bold text-white">
-                    <Check size={11} /> Aplicado
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => onAplicar(c)}
-                    className="flex-shrink-0 rounded-lg bg-welve-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-welve-600"
-                  >
-                    Aplicar
-                  </button>
-                )}
-              </div>
+                {chipLabel(c)}
+              </button>
             );
           })}
         </div>
@@ -120,7 +104,10 @@ export default function CuponesDisponibles({
         </div>
       )}
 
-      {cuponAplicado && !cuponNoValidoParaCarrito && (
+      {/* Fallback solo si el cupón aplicado no aparece como chip (ej. se
+          aplicó por código manual y no está en la lista de disponibles) —
+          en el caso normal, tocar el chip aplicado de nuevo ya lo quita. */}
+      {cuponAplicado && !cuponNoValidoParaCarrito && !cupones.some((c) => c.id === cuponAplicado.id) && (
         <button onClick={onQuitar} className="text-xs font-semibold text-gray-400 hover:text-gray-600">
           Quitar cupón aplicado
         </button>

@@ -19,50 +19,47 @@ export default function CarritoItems({ items, onCambiarCantidad, onQuitar }: Pro
   }
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-1.5">
       {items.map((item) => {
         const excedeStock = item.producto.gestionarInventario && item.cantidad > item.producto.stockActual;
         return (
-          <div key={item.producto.id} className="rounded-xl border border-gray-100 p-2.5">
-            <div className="flex items-center gap-2.5">
+          <div key={item.producto.id} className="group rounded-lg border border-gray-100">
+            <div className="flex h-14 items-center gap-2 px-2">
               {item.producto.imagenUrl ? (
                 <img src={item.producto.imagenUrl} alt="" className="h-10 w-10 flex-shrink-0 rounded-lg object-cover" />
               ) : (
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100">
-                  <Package size={16} className="text-gray-300" />
+                  <Package size={14} className="text-gray-300" />
                 </div>
               )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-gray-800">{item.producto.nombre}</p>
-                <p className="font-mono text-[10px] text-gray-400">{item.producto.sku}</p>
-              </div>
-              <button
-                onClick={() => onQuitar(item.producto.id)}
-                className="flex-shrink-0 rounded-lg p-1 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500"
-              >
-                <X size={15} />
-              </button>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <p className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800">{item.producto.nombre}</p>
+              <div className="flex flex-shrink-0 items-center gap-1">
                 <button
                   onClick={() => onCambiarCantidad(item.producto.id, item.cantidad - 1)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200"
+                  className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200"
                 >
-                  <Minus size={13} />
+                  <Minus size={12} />
                 </button>
-                <span className="w-6 text-center text-sm font-bold tabular-nums">{item.cantidad}</span>
+                <span className="w-5 text-center text-xs font-bold tabular-nums">{item.cantidad}</span>
                 <button
                   onClick={() => onCambiarCantidad(item.producto.id, item.cantidad + 1)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200"
+                  className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200"
                 >
-                  <Plus size={13} />
+                  <Plus size={12} />
                 </button>
               </div>
-              <p className="text-sm font-bold tabular-nums text-gray-900">S/ {(item.producto.precioConIgv * item.cantidad).toFixed(2)}</p>
+              <p className="w-16 flex-shrink-0 text-right text-sm font-bold tabular-nums text-gray-900">
+                S/ {(item.producto.precioConIgv * item.cantidad).toFixed(2)}
+              </p>
+              <button
+                onClick={() => onQuitar(item.producto.id)}
+                className="flex-shrink-0 rounded-md p-1 text-gray-300 opacity-60 transition-colors hover:bg-red-50 hover:text-red-500 hover:opacity-100 group-hover:opacity-100"
+              >
+                <X size={14} />
+              </button>
             </div>
             {excedeStock && (
-              <p className="mt-1.5 text-[11px] font-medium text-red-500">Solo hay {item.producto.stockActual} en stock</p>
+              <p className="px-2 pb-1.5 text-[10px] font-medium text-red-500">Solo hay {item.producto.stockActual} en stock</p>
             )}
           </div>
         );
