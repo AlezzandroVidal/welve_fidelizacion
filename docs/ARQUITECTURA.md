@@ -211,7 +211,7 @@ erDiagram
 `Venta.items` es una lista de `ItemVenta` **embebida** dentro del documento
 (snapshot de producto/precio al momento de la venta), no una colección
 aparte — por eso no aparece como entidad propia en el diagrama. Ver
-`DATABASE.MD` para el schema completo de las 17 colecciones, incluyendo
+[`DATABASE.MD`](./DATABASE.MD) para el schema completo de las 17 colecciones, incluyendo
 `membresias`, `membresias_clientes`, `notificaciones`, `historial_visitas`,
 `resenas`, `movimientos_inventario`, `pagos` y `welve_admins`.
 

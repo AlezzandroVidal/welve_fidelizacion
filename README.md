@@ -139,16 +139,19 @@ welve_fidelizacion/
 │       └── components/            # componentes por dominio + ui/ genéricos
 ├── docs/
 │   ├── REGLAS_NEGOCIO.md
-│   └── ARQUITECTURA.md
+│   ├── ARQUITECTURA.md
+│   ├── DATABASE.MD                # schema completo de Mongo, campo por campo
+│   ├── PRODUCT.MD                 # reglas de negocio detalladas por módulo
+│   ├── DESIGN.md                  # tokens visuales (paleta, tipografía, layout)
+│   └── CONTRIBUTING.md            # GitHub Flow, commits, PRs, historial real de ramas
 ├── docker-compose.yml            # stack completo (prueba local de prod)
 ├── DEPLOY.md                     # guía de deploy en Railway
-├── DATABASE.MD                   # schema completo de Mongo, campo por campo
-├── PRODUCT.MD                    # reglas de negocio detalladas por módulo
-├── DESIGN.md                     # tokens visuales (paleta, tipografía, layout)
-├── CLAUDE.md                     # convenciones del proyecto para agentes de IA
-├── CONTRIBUTING.md               # GitHub Flow, commits, PRs
 └── .env.example
 ```
+
+`CLAUDE.md` y `AGENTS.md` (instrucciones para agentes de IA) existen en el
+repo pero **no están versionados** — viven en `.gitignore`, cada quien los
+mantiene localmente.
 
 ## Documentación adicional
 
@@ -157,10 +160,10 @@ welve_fidelizacion/
 | [DEPLOY.md](./DEPLOY.md) | Guía paso a paso de deploy en Railway |
 | [docs/REGLAS_NEGOCIO.md](./docs/REGLAS_NEGOCIO.md) | Actores, módulos, flujos y reglas de negocio |
 | [docs/ARQUITECTURA.md](./docs/ARQUITECTURA.md) | Diagramas de arquitectura, capas y schema de datos |
-| [DATABASE.MD](./DATABASE.MD) | Schema completo de MongoDB, colección por colección |
-| [PRODUCT.MD](./PRODUCT.MD) | Visión de producto y reglas de negocio funcionales |
-| [DESIGN.md](./DESIGN.md) | Sistema de diseño: paleta, tipografía, componentes |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Branching (GitHub Flow), commits, PRs |
+| [docs/DATABASE.MD](./docs/DATABASE.MD) | Schema completo de MongoDB, colección por colección |
+| [docs/PRODUCT.MD](./docs/PRODUCT.MD) | Visión de producto y reglas de negocio funcionales |
+| [docs/DESIGN.md](./docs/DESIGN.md) | Sistema de diseño: paleta, tipografía, componentes |
+| [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) | Branching (GitHub Flow), commits, PRs, cómo se ha trabajado en la práctica |
 
 ## Créditos
 

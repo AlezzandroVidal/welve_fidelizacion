@@ -1,8 +1,13 @@
 # PRODUCTO.md — Welve
 
-> Este documento describe el dominio de negocio, las reglas y los flujos de Welve.
-> Es la fuente de verdad funcional para implementar features. El `CLAUDE.md` referencia
-> este archivo para contexto de producto; no lo dupliques ahí.
+> Este es el documento **original de planeación/discovery** del producto —
+> visión, modelo de negocio y alcance inicial. Varias secciones (cupones,
+> retos, "fuera de alcance") quedaron desactualizadas a medida que el
+> producto se construyó más allá de lo previsto acá (motor de cupones
+> flexibles, módulo Caja/POS, QR, pagos simulados). Para las reglas de
+> negocio **tal como están implementadas hoy**, verificadas contra el código
+> real, ver [`docs/REGLAS_NEGOCIO.md`](./REGLAS_NEGOCIO.md) — este archivo se
+> mantiene como contexto histórico de la visión inicial, no como spec viva.
 
 ---
 
@@ -153,13 +158,26 @@ sirve a múltiples empresas, aisladas lógicamente.
 
 ---
 
-## 9. Fuera de alcance v1 (no implementar sin confirmar)
+## 9. Fuera de alcance v1 (estado real, no la previsión original)
 
-- Procesamiento real de pagos (membresías, suscripción de empresas a Welve).
-- Roles granulares dentro de una empresa (multi-usuario admin con permisos).
-- App móvil nativa (el producto es deliberadamente "sin app").
-- Multi-sucursal por empresa (una empresa con varios locales) — confirmar si
-  entra en el alcance del curso antes de modelarlo.
+- ~~Procesamiento real de pagos~~ — implementado como **simulación
+  determinística** (`pagos`, número de tarjeta de prueba terminado en 4242
+  aprueba), no una pasarela real. Cubre la suscripción de la empresa a
+  Welve; las membresías del cliente final siguen sin procesar pagos reales.
+- Roles granulares dentro de una empresa (multi-usuario admin con permisos)
+  — sigue sin existir: Staff y Caja operan con el mismo JWT que el admin.
+- App móvil nativa (el producto sigue siendo deliberadamente "sin app").
+- Multi-sucursal por empresa (una empresa con varios locales) — sigue sin
+  modelarse.
+
+**No previsto originalmente en este documento, pero sí implementado:**
+módulo Caja/POS completo (catálogo de productos, inventario, checkout con
+IGV y aplicación de cupón en el mismo flujo), motor de cupones flexibles
+(visibilidad `publico`/`vip`/`por_reto`/`por_requisito`/`privado`, con
+desbloqueo previo al canje), sistema de QR (afiliación, QR personal del
+cliente, validación por staff) y regla anti-fraude explícita (el cliente
+nunca puede registrarse una visita a sí mismo tras la afiliación inicial).
+Detalle completo en [`docs/REGLAS_NEGOCIO.md`](./REGLAS_NEGOCIO.md).
 
 ---
 
