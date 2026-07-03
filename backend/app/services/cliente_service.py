@@ -1,15 +1,19 @@
 import asyncio
 import random
 import string
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Any, Optional
 
 from beanie import PydanticObjectId
 from pymongo.errors import DuplicateKeyError
 
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.cliente import Cliente
+from app.models.cupon import Cupon
+from app.models.enums import EstadoCupon
 from app.models.relacion import RelacionClienteEmpresa
 from app.schemas.cliente import MagicLinkRequest
+from app.services import cupon_acceso_service
 
 
 def _generar_codigo_cliente() -> str:
@@ -156,6 +160,32 @@ async def listar_clientes_empresa(empresa_id: PydanticObjectId) -> list[tuple[Cl
     
     cmap = {c.id: c for c in clientes}
     return [(cmap[r.cliente_id], r) for r in relaciones if r.cliente_id in cmap]
+
+
+async def listar_cupones_cliente(empresa_id: PydanticObjectId, cliente_id: PydanticObjectId) -> list[dict[str, Any]]:
+    """Cupones vigentes de la empresa con el AccesoCupon de este cliente
+    embebido — usado por la pestaña "Cupones" del detalle de cliente en el
+    panel admin (Disponibles/En progreso/Desbloqueados según acceso.estado,
+    Canjeados se arma aparte con canje_service.listar_canjes_cliente). Mismo
+    patrón que wallet_service.get_empresa_detalle, pero del lado del staff
+    mirando a UN cliente en vez del cliente mirando su propio wallet."""
+    now = datetime.now(timezone.utc)
+    cupones = await Cupon.find(
+        Cupon.empresa_id == empresa_id,
+        Cupon.estado == EstadoCupon.activo,
+        Cupon.fecha_inicio <= now,
+        Cupon.fecha_expiracion > now,
+    ).to_list()
+
+    resultado = []
+    for cupon in cupones:
+        acceso = await cupon_acceso_service.evaluar_acceso_cupon(cupon, cliente_id, empresa_id)
+        if not acceso.puede_ver:
+            continue
+        c_dict = cupon.model_dump(mode="json")
+        c_dict["acceso"] = acceso.model_dump(mode="json")
+        resultado.append(c_dict)
+    return resultado
 
 
 async def actualizar_perfil(

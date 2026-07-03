@@ -15,3 +15,11 @@ export function useCliente(id: string | null) {
     enabled: !!id,
   });
 }
+
+export function useClienteCupones(id: string | null) {
+  return useQuery({
+    queryKey: ["clientes", "cupones", id ?? ""],
+    queryFn: () => clientesApi.cupones(id!).then((r) => r.data),
+    enabled: !!id,
+  });
+}

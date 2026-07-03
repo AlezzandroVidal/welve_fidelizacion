@@ -8,6 +8,14 @@ export function useCanjes() {
   });
 }
 
+export function useCanjesCliente(clienteId: string | null) {
+  return useQuery({
+    queryKey: ["canjes", "cliente", clienteId ?? ""],
+    queryFn: () => canjesApi.porCliente(clienteId!).then((r) => r.data),
+    enabled: !!clienteId,
+  });
+}
+
 export function useCreateCanje() {
   const qc = useQueryClient();
   return useMutation({

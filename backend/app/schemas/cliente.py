@@ -18,6 +18,7 @@ class ClienteCreate(BaseModel):
 class ClienteResponse(BaseModel):
     id: str
     nombre: str
+    codigoCliente: str
     email: Optional[str] = None
     whatsapp: Optional[str] = None
     fechaAlta: str

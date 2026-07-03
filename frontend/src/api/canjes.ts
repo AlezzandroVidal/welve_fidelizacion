@@ -25,6 +25,7 @@ export interface CreateCanjeDto {
 
 export const canjesApi = {
   list: () => api.get<Canje[]>("/canjes"),
+  porCliente: (clienteId: string) => api.get<Canje[]>(`/canjes/cliente/${clienteId}`),
   create: (clienteId: string, data: CreateCanjeDto) =>
     api.post<Canje>(`/canjes/${clienteId}`, data),
 };

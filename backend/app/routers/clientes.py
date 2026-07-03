@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from beanie import PydanticObjectId
@@ -17,6 +19,7 @@ async def listar_clientes(empresa: Empresa = Depends(get_current_empresa)):
         ClienteResponse(
             id=str(c.id),
             nombre=c.nombre,
+            codigoCliente=c.codigo_cliente,
             email=c.email,
             whatsapp=c.whatsapp,
             fechaAlta=c.fecha_alta.isoformat(),
@@ -53,6 +56,7 @@ async def obtener_cliente(
         return ClienteResponse(
             id=str(cliente.id),
             nombre=cliente.nombre,
+            codigoCliente=cliente.codigo_cliente,
             email=cliente.email,
             whatsapp=cliente.whatsapp,
             fechaAlta=cliente.fecha_alta.isoformat(),
@@ -60,6 +64,7 @@ async def obtener_cliente(
     return ClienteResponse(
         id=str(cliente.id),
         nombre=cliente.nombre,
+        codigoCliente=cliente.codigo_cliente,
         email=cliente.email,
         whatsapp=cliente.whatsapp,
         fechaAlta=cliente.fecha_alta.isoformat(),
@@ -70,3 +75,18 @@ async def obtener_cliente(
         segmento=relacion.segmento,
         ultimaVisita=relacion.ultima_visita.isoformat() if relacion.ultima_visita else None,
     )
+
+
+@router.get("/{cliente_id}/cupones", response_model=List[Dict[str, Any]])
+async def listar_cupones_cliente(
+    cliente_id: str, empresa: Empresa = Depends(get_current_empresa),
+):
+    """Cupones vigentes de la empresa con el AccesoCupon de este cliente
+    embebido — pestaña "Cupones" del detalle de cliente. El canjeado=None
+    del "límite alcanzado" ya distingue disponible/en_progreso/etc, ver
+    cliente_service.listar_cupones_cliente."""
+    try:
+        cid = PydanticObjectId(cliente_id)
+    except Exception:
+        raise HTTPException(status_code=422, detail="cliente_id inválido")
+    return await cliente_service.listar_cupones_cliente(empresa.id, cid)
