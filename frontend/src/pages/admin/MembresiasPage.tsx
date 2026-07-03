@@ -206,7 +206,8 @@ export default function MembresiasPage() {
 
   async function handleTogglePausa(plan: Membresia) {
     try {
-      plan.estado === "pausada" ? await activarPlan.mutateAsync(plan.id) : await pausarPlan.mutateAsync(plan.id);
+      if (plan.estado === "pausada") await activarPlan.mutateAsync(plan.id);
+      else await pausarPlan.mutateAsync(plan.id);
       toast.success(plan.estado === "pausada" ? "Plan activado" : "Plan pausado");
     } catch {
       toast.error("No se pudo actualizar el plan");
