@@ -5,7 +5,9 @@ from typing import Optional
 from pydantic import BaseModel, field_validator, model_validator
 
 from app.models.cupon import RequisitoAcceso
-from app.models.enums import AccesoVisibilidad, AplicaCupon, EstadoAcceso, EstadoCupon, RubroEmpresa, TipoCupon
+from app.models.enums import (
+    AccesoVisibilidad, AplicaCupon, EstadoAcceso, EstadoCupon, RubroEmpresa, TipoCupon, TipoRequisito,
+)
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
@@ -113,10 +115,17 @@ class CuponCreate(BaseModel):
                 raise ValueError("cantidad_paga debe ser menor que cantidad_lleva")
         if self.fecha_expiracion <= self.fecha_inicio:
             raise ValueError("fecha_expiracion debe ser posterior a fecha_inicio")
-        if self.visibilidad == AccesoVisibilidad.por_reto and not self.reto_id:
-            raise ValueError("reto_id es requerido para visibilidad=por_reto")
-        if self.visibilidad == AccesoVisibilidad.por_requisito and not self.requisito:
-            raise ValueError("requisito es requerido para visibilidad=por_requisito")
+        # reto_id es opcional incluso con visibilidad=por_reto: un cupón puede
+        # crearse "a la espera" de que se le asigne un reto desde el propio
+        # formulario de Reto (RetoModal → "Cupones que desbloquea"), que es
+        # el flujo principal cuando el reto todavía no existe.
+        if self.visibilidad == AccesoVisibilidad.por_requisito:
+            if not self.requisito:
+                raise ValueError("requisito es requerido para visibilidad=por_requisito")
+            if self.requisito.tipo == TipoRequisito.gasto_en_productos and not (
+                self.requisito.producto_objetivo_id or self.requisito.categoria_objetivo
+            ):
+                raise ValueError("producto_objetivo_id o categoria_objetivo es requerido para gasto_en_productos")
         return self
 
 

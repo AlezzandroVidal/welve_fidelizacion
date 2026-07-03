@@ -48,6 +48,11 @@ class TipoReto(str, Enum):
     monto_en_periodo = "monto_en_periodo"
     productos_comprados = "productos_comprados"
     puntos_acumulados = "puntos_acumulados"
+    # Monto gastado en un producto/categoría específico — a diferencia de
+    # monto_acumulado/monto_en_periodo (sin filtro de producto), solo cuenta
+    # lo comprado vía Caja (Venta.items tiene el detalle producto+monto; una
+    # visita registrada por staff sin venta asociada no lo tiene).
+    monto_en_productos = "monto_en_productos"
 
 
 class AccesoVisibilidad(str, Enum):
@@ -64,6 +69,8 @@ class TipoRequisito(str, Enum):
     gasto_total = "gasto_total"
     gasto_en_periodo = "gasto_en_periodo"
     puntos_acumulados = "puntos_acumulados"
+    # Igual que TipoReto.monto_en_productos: solo cuenta compras vía Caja.
+    gasto_en_productos = "gasto_en_productos"
 
 
 class TipoNotificacion(str, Enum):

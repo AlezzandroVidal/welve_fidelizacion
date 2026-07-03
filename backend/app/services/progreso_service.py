@@ -39,6 +39,22 @@ async def _sumar_monto_periodo(empresa_id: PydanticObjectId, cliente_id: Pydanti
     return sum(r.monto or 0.0 for r in registros)
 
 
+async def _ids_categoria(empresa_id: PydanticObjectId, categoria_objetivo: str) -> set[str]:
+    productos = await Producto.find(
+        Producto.empresa_id == empresa_id, Producto.categoria == categoria_objetivo,
+    ).to_list()
+    return {str(p.id) for p in productos}
+
+
+async def _ventas_cliente(
+    empresa_id: PydanticObjectId, cliente_id: PydanticObjectId, periodo_dias: Optional[int],
+) -> list[Venta]:
+    clausulas = [Venta.empresa_id == empresa_id, Venta.cliente_id == cliente_id]
+    if periodo_dias:
+        clausulas.append(Venta.created_at >= datetime.now(timezone.utc) - timedelta(days=periodo_dias))
+    return await Venta.find(*clausulas).to_list()
+
+
 async def _contar_productos_comprados(
     empresa_id: PydanticObjectId,
     cliente_id: PydanticObjectId,
@@ -49,14 +65,9 @@ async def _contar_productos_comprados(
     visitas/canjes registrados sin una venta asociada."""
     if not producto_objetivo_id and not categoria_objetivo:
         return 0
-    categoria_ids: Optional[set[str]] = None
-    if categoria_objetivo and not producto_objetivo_id:
-        productos = await Producto.find(
-            Producto.empresa_id == empresa_id, Producto.categoria == categoria_objetivo,
-        ).to_list()
-        categoria_ids = {str(p.id) for p in productos}
+    categoria_ids = await _ids_categoria(empresa_id, categoria_objetivo) if categoria_objetivo and not producto_objetivo_id else None
 
-    ventas = await Venta.find(Venta.empresa_id == empresa_id, Venta.cliente_id == cliente_id).to_list()
+    ventas = await _ventas_cliente(empresa_id, cliente_id, None)
     total = 0
     for venta in ventas:
         for item in venta.items:
@@ -64,6 +75,31 @@ async def _contar_productos_comprados(
                 total += item.cantidad
             elif categoria_ids and str(item.producto_id) in categoria_ids:
                 total += item.cantidad
+    return total
+
+
+async def _sumar_monto_productos(
+    empresa_id: PydanticObjectId,
+    cliente_id: PydanticObjectId,
+    producto_objetivo_id: Optional[PydanticObjectId],
+    categoria_objetivo: Optional[str],
+    periodo_dias: Optional[int],
+) -> float:
+    """Igual que _contar_productos_comprados pero suma dinero (item.subtotal)
+    en vez de unidades — también best-effort, solo vía Caja. periodo_dias
+    None = sin ventana de tiempo (todo el histórico)."""
+    if not producto_objetivo_id and not categoria_objetivo:
+        return 0.0
+    categoria_ids = await _ids_categoria(empresa_id, categoria_objetivo) if categoria_objetivo and not producto_objetivo_id else None
+
+    ventas = await _ventas_cliente(empresa_id, cliente_id, periodo_dias)
+    total = 0.0
+    for venta in ventas:
+        for item in venta.items:
+            if producto_objetivo_id and str(item.producto_id) == str(producto_objetivo_id):
+                total += item.subtotal
+            elif categoria_ids and str(item.producto_id) in categoria_ids:
+                total += item.subtotal
     return total
 
 
@@ -84,6 +120,10 @@ async def calcular_progreso_reto(
         return await _contar_productos_comprados(
             empresa_id, cliente_id, reto.producto_objetivo_id, reto.categoria_objetivo,
         )
+    if reto.condicion_tipo == TipoReto.monto_en_productos:
+        return await _sumar_monto_productos(
+            empresa_id, cliente_id, reto.producto_objetivo_id, reto.categoria_objetivo, reto.periodo_dias,
+        )
     return 0.0
 
 
@@ -100,4 +140,8 @@ async def calcular_progreso_requisito(
         return await _contar_visitas_periodo(empresa_id, cliente_id, requisito.periodo_dias or _PERIODO_DEFAULT_DIAS)
     if requisito.tipo == TipoRequisito.gasto_en_periodo:
         return await _sumar_monto_periodo(empresa_id, cliente_id, requisito.periodo_dias or _PERIODO_DEFAULT_DIAS)
+    if requisito.tipo == TipoRequisito.gasto_en_productos:
+        return await _sumar_monto_productos(
+            empresa_id, cliente_id, requisito.producto_objetivo_id, requisito.categoria_objetivo, requisito.periodo_dias,
+        )
     return 0.0

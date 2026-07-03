@@ -5,7 +5,7 @@ from beanie import PydanticObjectId
 from app.core.deps import get_current_empresa
 from app.models.empresa import Empresa
 from app.models.cupon import Cupon
-from app.schemas.reto import RetoCreate, RetoResponse, RetoUpdate
+from app.schemas.reto import AsignarCuponesRequest, RetoCreate, RetoResponse, RetoUpdate
 from app.services import reto_service
 from beanie.operators import In
 
@@ -100,3 +100,15 @@ async def reactivar_reto(reto_id: str, empresa: Empresa = Depends(get_current_em
         raise HTTPException(status_code=404, detail="Reto no encontrado")
     res = await _hydrate_retos([reto])
     return res[0]
+
+
+@router.put("/{reto_id}/cupones", response_model=list[str])
+async def asignar_cupones(reto_id: str, data: AsignarCuponesRequest, empresa: Empresa = Depends(get_current_empresa)):
+    """Cupones que este reto desbloquea (visibilidad=por_reto) — un reto
+    puede desbloquear varios a la vez. Reemplaza la lista completa (no es
+    un append); el frontend manda siempre el set final seleccionado."""
+    rid = _parse_id(reto_id)
+    if not await reto_service.obtener_reto(empresa.id, rid):
+        raise HTTPException(status_code=404, detail="Reto no encontrado")
+    cupones = await reto_service.asignar_cupones(empresa.id, rid, data.cupon_ids)
+    return [str(c.id) for c in cupones]

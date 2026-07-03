@@ -14,6 +14,10 @@ class RequisitoAcceso(BaseModel):
     tipo: TipoRequisito
     valor: float
     periodo_dias: Optional[int] = None  # solo aplica a las variantes *_en_periodo de TipoRequisito
+    # Solo para tipo=gasto_en_productos — mismo criterio que
+    # Reto.producto_objetivo_id/categoria_objetivo: uno de los dos, no ambos.
+    producto_objetivo_id: Optional[PydanticObjectId] = None
+    categoria_objetivo: Optional[str] = None
 
 
 class Cupon(Document):

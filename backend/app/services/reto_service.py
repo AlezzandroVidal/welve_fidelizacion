@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from beanie import PydanticObjectId
 
 from app.models.cliente import Cliente
+from app.models.cupon import Cupon
+from app.models.enums import AccesoVisibilidad
 from app.models.relacion import RelacionClienteEmpresa
 from app.models.reto import Reto
 from app.schemas.reto import RetoCreate, RetoUpdate
@@ -62,6 +64,42 @@ async def reactivar_reto(empresa_id: PydanticObjectId, reto_id: PydanticObjectId
         return None
     await reto.set({"cancelado": False})
     return reto
+
+
+async def asignar_cupones(
+    empresa_id: PydanticObjectId, reto_id: PydanticObjectId, cupon_ids: list[str],
+) -> list[Cupon]:
+    """Un reto puede desbloquear varios cupones (visibilidad=por_reto,
+    reto_id=este reto) — esta es la vía principal para armar ese vínculo,
+    en vez de tener que ir cupón por cupón a la pestaña Visibilidad.
+    Diff idempotente contra lo ya asignado: agrega los nuevos, y a los que
+    se sacaron de la lista les resetea la visibilidad a público (un cupón
+    por_reto sin reto_id quedaría en un estado roto — evaluar_acceso_cupon
+    no tiene un fallback para eso)."""
+    objetivo = {PydanticObjectId(cid) for cid in cupon_ids}
+
+    actuales = await Cupon.find(
+        Cupon.empresa_id == empresa_id,
+        Cupon.visibilidad == AccesoVisibilidad.por_reto,
+        Cupon.reto_id == reto_id,
+    ).to_list()
+    actuales_ids = {c.id for c in actuales}
+
+    for cupon in actuales:
+        if cupon.id not in objetivo:
+            await cupon.set({"visibilidad": AccesoVisibilidad.publico, "reto_id": None})
+
+    nuevos_ids = objetivo - actuales_ids
+    if nuevos_ids:
+        nuevos = await Cupon.find(Cupon.empresa_id == empresa_id, {"_id": {"$in": list(nuevos_ids)}}).to_list()
+        for cupon in nuevos:
+            await cupon.set({"visibilidad": AccesoVisibilidad.por_reto, "reto_id": reto_id})
+
+    return await Cupon.find(
+        Cupon.empresa_id == empresa_id,
+        Cupon.visibilidad == AccesoVisibilidad.por_reto,
+        Cupon.reto_id == reto_id,
+    ).to_list()
 
 
 async def notificar_retos_pendientes() -> list[dict]:

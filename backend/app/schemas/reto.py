@@ -27,10 +27,12 @@ class RetoCreate(BaseModel):
     def validar_campos(self) -> "RetoCreate":
         if self.condicion_tipo in _TIPOS_CON_PERIODO and not self.periodo_dias:
             raise ValueError(f"periodo_dias es requerido para condicion_tipo={self.condicion_tipo.value}")
-        if self.condicion_tipo == TipoReto.productos_comprados and not (
+        if self.condicion_tipo in (TipoReto.productos_comprados, TipoReto.monto_en_productos) and not (
             self.producto_objetivo_id or self.categoria_objetivo
         ):
-            raise ValueError("producto_objetivo_id o categoria_objetivo es requerido para productos_comprados")
+            raise ValueError(
+                f"producto_objetivo_id o categoria_objetivo es requerido para {self.condicion_tipo.value}"
+            )
         if self.fecha_fin <= self.fecha_inicio:
             raise ValueError("fecha_fin debe ser posterior a fecha_inicio")
         return self
@@ -48,6 +50,10 @@ class RetoUpdate(BaseModel):
     mostrar_progreso_publico: Optional[bool] = None
     notificar_al_completar: Optional[bool] = None
     mensaje_completado: Optional[str] = None
+
+
+class AsignarCuponesRequest(BaseModel):
+    cupon_ids: list[str] = []
 
 
 class RetoResponse(BaseModel):
