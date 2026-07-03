@@ -32,6 +32,7 @@ class Empresa(Document):
     nombre: str
     rubro: RubroEmpresa
     logo_url: str | None = None          # data URI base64 o URL externa
+    imagen_portada_url: str | None = None          # data URI base64 o URL externa
     telefono_contacto: str | None = None
     descripcion: str | None = None
     direccion: str | None = None
@@ -41,9 +42,11 @@ class Empresa(Document):
     instagram: str | None = None
     facebook: str | None = None
     tiktok: str | None = None
+    sitio_web: str | None = None
     admin_email: Indexed(EmailStr, unique=True)
     admin_password_hash: str
     plan_suscripcion: PlanSuscripcion = PlanSuscripcion.starter
+    fecha_vencimiento_plan: datetime | None = None
     estado: EstadoEmpresa = EstadoEmpresa.activo
     config: EmpresaConfig = Field(default_factory=EmpresaConfig)
     fecha_registro: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -5,7 +5,7 @@ from app.core.deps import get_current_empresa
 from app.models.empresa import Empresa
 from app.schemas.empresa import (
     EmpresaRegister, EmpresaResponse, LoginRequest, TokenResponse,
-    EmpresaUpdate, EmpresaLogoUpload,
+    EmpresaUpdate, EmpresaLogoUpload, EmpresaPortadaUpload,
     CambiarPasswordEmpresaRequest, DesactivarCuentaRequest, MensajeResponse,
     RecompensaAutomaticaCreate, RecompensaAutomaticaResponse, RecompensaAutomaticaUpdate,
 )
@@ -31,6 +31,7 @@ def _to_response(e: Empresa) -> EmpresaResponse:
         nombre=e.nombre,
         rubro=e.rubro,
         logoUrl=e.logo_url,
+        imagenPortadaUrl=e.imagen_portada_url,
         telefonoContacto=e.telefono_contacto,
         descripcion=e.descripcion,
         direccion=e.direccion,
@@ -40,8 +41,10 @@ def _to_response(e: Empresa) -> EmpresaResponse:
         instagram=e.instagram,
         facebook=e.facebook,
         tiktok=e.tiktok,
+        sitioWeb=e.sitio_web,
         adminEmail=e.admin_email,
         planSuscripcion=e.plan_suscripcion,
+        fechaVencimientoPlan=e.fecha_vencimiento_plan,
         estado=e.estado,
         rachaDiasRuptura=e.config.racha_dias_ruptura,
         solesPorPunto=e.config.soles_por_punto,
@@ -78,6 +81,8 @@ async def me(empresa: Empresa = Depends(get_current_empresa)):
 async def update_config(data: EmpresaUpdate, empresa: Empresa = Depends(get_current_empresa)):
     if data.nombre is not None:
         empresa.nombre = data.nombre
+    if data.rubro is not None:
+        empresa.rubro = data.rubro
     if data.telefono_contacto is not None:
         empresa.telefono_contacto = data.telefono_contacto
     if data.racha_dias_ruptura is not None:
@@ -94,6 +99,8 @@ async def update_config(data: EmpresaUpdate, empresa: Empresa = Depends(get_curr
         empresa.config.dias_gracia_exclusivo = data.dias_gracia_exclusivo
     if data.logo_url is not None:
         empresa.logo_url = data.logo_url
+    if data.imagen_portada_url is not None:
+        empresa.imagen_portada_url = data.imagen_portada_url
     if data.descripcion is not None:
         empresa.descripcion = data.descripcion
     if data.direccion is not None:
@@ -110,6 +117,8 @@ async def update_config(data: EmpresaUpdate, empresa: Empresa = Depends(get_curr
         empresa.facebook = data.facebook
     if data.tiktok is not None:
         empresa.tiktok = data.tiktok
+    if data.sitio_web is not None:
+        empresa.sitio_web = data.sitio_web
 
     await empresa.save()
     return _to_response(empresa)
@@ -156,6 +165,31 @@ async def upload_logo(payload: EmpresaLogoUpload, empresa: Empresa = Depends(get
 async def delete_logo(empresa: Empresa = Depends(get_current_empresa)):
     """Elimina el logo de la empresa (lo pone en None)."""
     empresa.logo_url = None
+    await empresa.save()
+    return _to_response(empresa)
+
+
+@router.post("/me/portada", response_model=EmpresaResponse)
+async def upload_portada(payload: EmpresaPortadaUpload, empresa: Empresa = Depends(get_current_empresa)):
+    """
+    Recibe un data URI base64 (data:image/png;base64,...) para la imagen de portada.
+    Valida formato mínimo y tamaño (~2 MB en base64 ≈ 2.7 MB string) — mismo criterio que /me/logo.
+    """
+    data_uri = payload.data_uri.strip()
+    if not data_uri.startswith("data:image/"):
+        raise HTTPException(status_code=422, detail="Formato inválido: se espera un data URI de imagen")
+    if len(data_uri) > 2_800_000:
+        raise HTTPException(status_code=413, detail="La imagen supera el límite de 2 MB")
+
+    empresa.imagen_portada_url = data_uri
+    await empresa.save()
+    return _to_response(empresa)
+
+
+@router.delete("/me/portada", response_model=EmpresaResponse)
+async def delete_portada(empresa: Empresa = Depends(get_current_empresa)):
+    """Elimina la imagen de portada de la empresa (la pone en None)."""
+    empresa.imagen_portada_url = None
     await empresa.save()
     return _to_response(empresa)
 
