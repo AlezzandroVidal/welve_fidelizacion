@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.models.enums import CanalCanje
+from app.models.enums import CanalCanje, TipoCupon
 
 
 class CanjeCreate(BaseModel):
@@ -21,4 +21,7 @@ class CanjeResponse(BaseModel):
     canal: CanalCanje
     staffRef: Optional[str] = None
     clienteNombre: Optional[str] = None
+    clienteCodigo: Optional[str] = None
     cuponNombre: Optional[str] = None
+    cuponTipo: Optional[TipoCupon] = None
+    cuponValor: Optional[float] = None

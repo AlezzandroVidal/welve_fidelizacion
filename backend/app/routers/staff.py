@@ -1,12 +1,9 @@
-from datetime import datetime, timezone
-
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.deps import get_current_empresa_admin
 from app.models.empresa import Empresa
 from app.schemas.canje import CanjeResponse
-from app.schemas.cupon import CuponResponse
 from app.schemas.qr import ResultadoVisitaResponse
 from app.schemas.staff import (
     CanjePorCodigoRequest,
@@ -19,7 +16,7 @@ from app.schemas.staff import (
     VisitaPorQRRequest,
     VisitaStaffResponse,
 )
-from app.services import staff_service
+from app.services import cupon_service, staff_service
 
 router = APIRouter(prefix="/staff", tags=["staff"])
 
@@ -29,22 +26,6 @@ def _parse_id(value: str, campo: str = "id") -> PydanticObjectId:
         return PydanticObjectId(value)
     except Exception:
         raise HTTPException(status_code=422, detail=f"{campo} inválido")
-
-
-def _cupon_to_response(c) -> CuponResponse:
-    now = datetime.now(timezone.utc)
-    fecha_exp = c.fecha_expiracion
-    if fecha_exp.tzinfo is None:
-        fecha_exp = fecha_exp.replace(tzinfo=timezone.utc)
-    return CuponResponse(
-        id=str(c.id), empresaId=str(c.empresa_id), nombre=c.nombre, tipo=c.tipo,
-        valor=c.valor, montoMinimo=c.monto_minimo, fechaInicio=c.fecha_inicio,
-        fechaExpiracion=c.fecha_expiracion, estado=c.estado,
-        limiteUsosTotal=c.limite_usos_total, limiteUsosPorCliente=c.limite_usos_por_cliente,
-        usosActuales=c.usos_actuales, exclusivo=c.exclusivo,
-        estaVigente=c.estado.value == "activo" and fecha_exp >= now,
-        createdAt=c.created_at, updatedAt=c.updated_at,
-    )
 
 
 def _canje_to_response(c) -> CanjeResponse:
@@ -81,6 +62,7 @@ async def cliente_por_codigo(codigo_cliente: str, empresa: Empresa = Depends(get
         raise HTTPException(status_code=404, detail="Código no válido para esta empresa")
     return ClienteStaffResponse(
         cliente=ClienteInfoStaff(
+            id=str(data["cliente"].id),
             nombre=data["cliente"].nombre, email=data["cliente"].email, whatsapp=data["cliente"].whatsapp,
             codigoCliente=data["cliente"].codigo_cliente,
         ),
@@ -90,7 +72,7 @@ async def cliente_por_codigo(codigo_cliente: str, empresa: Empresa = Depends(get
             puntos=data["relacion"].puntos,
             segmento=data["relacion"].segmento.value,
         ),
-        cuponesDisponibles=[_cupon_to_response(c) for c in data["cupones"]],
+        cuponesDisponibles=[cupon_service.cupon_to_response(c) for c in data["cupones"]],
         canjesRecientes=[_canje_to_response(c) for c in data["canjes"]],
     )
 

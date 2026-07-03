@@ -41,11 +41,22 @@ async def obtener_cliente(
     except Exception:
         raise HTTPException(status_code=422, detail="cliente_id inválido")
 
-    res = await cliente_service.obtener_cliente_empresa(empresa.id, cid)
+    res = await cliente_service.obtener_cliente_con_relacion_opcional(empresa.id, cid)
     if not res:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    
+
     cliente, relacion = res
+    # relacion es None si el cliente existe globalmente pero aún no está
+    # afiliado a esta empresa — no es un 404: la afiliación es un efecto
+    # secundario del primer canje/visita, no un prerequisito para verlo.
+    if relacion is None:
+        return ClienteResponse(
+            id=str(cliente.id),
+            nombre=cliente.nombre,
+            email=cliente.email,
+            whatsapp=cliente.whatsapp,
+            fechaAlta=cliente.fecha_alta.isoformat(),
+        )
     return ClienteResponse(
         id=str(cliente.id),
         nombre=cliente.nombre,

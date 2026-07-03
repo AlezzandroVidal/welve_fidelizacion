@@ -28,6 +28,7 @@ class CanjePorQRRequest(BaseModel):
 
 
 class ClienteInfoStaff(BaseModel):
+    id: str
     nombre: str
     email: str | None = None
     whatsapp: str | None = None

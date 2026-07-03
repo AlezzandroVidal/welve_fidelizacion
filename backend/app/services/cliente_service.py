@@ -1,3 +1,4 @@
+import asyncio
 import random
 import string
 from typing import Optional
@@ -62,7 +63,15 @@ async def obtener_o_crear_relacion(
     """Get-or-create de la relación cliente↔empresa. Se usa tanto en la
     afiliación explícita (QR de empresa) como cuando el staff de una empresa
     nueva reconoce al cliente por su codigo_cliente global o su QR personal —
-    en ese caso esta llamada afilia implícitamente al cliente en esa empresa."""
+    en ese caso esta llamada afilia implícitamente al cliente en esa empresa.
+
+    Reintenta la lectura post-choque un par de veces con backoff corto: en el
+    cluster Atlas compartido se observó una ventana de eventual consistency
+    donde, justo después de crear la relación (ej. en la afiliación), una
+    lectura inmediata desde otra request/conexión no la encuentra todavía —
+    el insert subsiguiente choca contra el índice único pero el find_one de
+    "recuperación" tampoco la ve aún. Un solo reintento no alcanza a cubrir
+    esa ventana."""
     relacion = await RelacionClienteEmpresa.find_one(
         RelacionClienteEmpresa.empresa_id == empresa_id,
         RelacionClienteEmpresa.cliente_id == cliente_id,
@@ -75,13 +84,16 @@ async def obtener_o_crear_relacion(
         await nueva.insert()
         return nueva
     except DuplicateKeyError:
-        # ya existía por una carrera concurrente -> usar esa.
-        existente = await RelacionClienteEmpresa.find_one(
-            RelacionClienteEmpresa.empresa_id == empresa_id,
-            RelacionClienteEmpresa.cliente_id == cliente_id,
-        )
-        if existente:
-            return existente
+        # ya existía por una carrera concurrente (o por replicación con
+        # lag) -> reintentar la lectura con backoff antes de rendirse.
+        for delay in (0.05, 0.15, 0.4):
+            existente = await RelacionClienteEmpresa.find_one(
+                RelacionClienteEmpresa.empresa_id == empresa_id,
+                RelacionClienteEmpresa.cliente_id == cliente_id,
+            )
+            if existente:
+                return existente
+            await asyncio.sleep(delay)
         raise
 
 
@@ -106,6 +118,23 @@ async def obtener_cliente_empresa(empresa_id: PydanticObjectId, cliente_id: Pyda
     )
     if not relacion:
         return None
+    return cliente, relacion
+
+
+async def obtener_cliente_con_relacion_opcional(
+    empresa_id: PydanticObjectId, cliente_id: PydanticObjectId,
+) -> tuple[Cliente, RelacionClienteEmpresa | None] | None:
+    """Como obtener_cliente_empresa, pero sin exigir afiliación previa: retorna
+    None solo si el Cliente no existe globalmente. La relación puede venir None
+    (cliente real, aún no afiliado a esta empresa) — la afiliación es un efecto
+    secundario del primer canje/visita, no un prerequisito para ver sus datos."""
+    cliente = await Cliente.get(cliente_id)
+    if not cliente:
+        return None
+    relacion = await RelacionClienteEmpresa.find_one(
+        RelacionClienteEmpresa.empresa_id == empresa_id,
+        RelacionClienteEmpresa.cliente_id == cliente_id,
+    )
     return cliente, relacion
 
 

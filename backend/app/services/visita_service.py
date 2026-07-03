@@ -4,8 +4,9 @@ from beanie import PydanticObjectId
 
 from app.core.security import create_access_token
 from app.models.empresa import Empresa
+from app.models.historial_visita import HistorialVisita
 from app.models.relacion import RelacionClienteEmpresa
-from app.services import cliente_service, recompensas_engine, segmento_service
+from app.services import cliente_service, cupon_desbloqueo_service, recompensas_engine, segmento_service
 
 
 def _construir_mensaje(
@@ -55,11 +56,21 @@ async def _evaluar_y_actualizar(
     )
     retos = await recompensas_engine.evaluar_retos(empresa, cliente_id, relacion)
 
+    # Cupones visibilidad=por_reto/por_requisito — distinto de `recompensas`
+    # arriba (canal=automatico, otorga Y canjea en el mismo paso): esto solo
+    # desbloquea (CuponDesbloqueado), el cliente todavía tiene que canjearlo.
+    # Se llama una sola vez acá (tail común de registrar_visita), nunca
+    # duplicado en venta_service.procesar_venta — ese ya pasa por acá.
+    cupones_desbloqueados = await cupon_desbloqueo_service.verificar_y_desbloquear_cupones(
+        cliente_id, empresa.id
+    )
+
     return {
         "visitas_totales": relacion.visitas_totales,
         "racha_actual": racha_actual,
         "recompensas_desbloqueadas": recompensas,
         "retos_completados": retos,
+        "cupones_desbloqueados": cupones_desbloqueados,
         "subio_a_exclusivo": subio_a_exclusivo,
         "mensaje": _construir_mensaje(relacion.visitas_totales, recompensas, retos, subio_a_exclusivo),
         "ya_registrado_hoy": False,
@@ -80,14 +91,24 @@ async def registrar_visita(
     now = datetime.now(timezone.utc)
     nuevas_visitas = relacion.visitas_totales + 1
     nuevo_monto_acumulado = relacion.monto_acumulado + monto if monto else relacion.monto_acumulado
+    # 1 punto por sol gastado — visitas sin compra (monto=None) no ganan puntos.
+    nuevos_puntos = relacion.puntos + int(monto) if monto else relacion.puntos
     await relacion.set({
         "visitas_totales": nuevas_visitas,
         "monto_acumulado": nuevo_monto_acumulado,
+        "puntos": nuevos_puntos,
         "ultima_visita": now,
         "updated_at": now,
     })
     relacion.visitas_totales = nuevas_visitas
     relacion.monto_acumulado = nuevo_monto_acumulado
+    relacion.puntos = nuevos_puntos
+
+    # Historial con fecha por evento — RelacionClienteEmpresa solo trae totales
+    # acumulados, esto es lo que permite progreso "en los últimos N días"
+    # (ver cupon_acceso_service / recompensas_engine). Mismo punto exacto donde
+    # se actualizan los totales, para que nunca queden desincronizados.
+    await HistorialVisita(empresa_id=empresa_id, cliente_id=cliente_id, fecha=now, monto=monto).insert()
 
     return await _evaluar_y_actualizar(empresa, relacion, cliente_id, ultima_visita_anterior)
 

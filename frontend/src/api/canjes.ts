@@ -11,7 +11,10 @@ export interface Canje {
   canal: CanalCanje;
   staffRef: string | null;
   clienteNombre: string | null;
+  clienteCodigo: string | null;
   cuponNombre: string | null;
+  cuponTipo: string | null;
+  cuponValor: number | null;
 }
 
 export interface CreateCanjeDto {

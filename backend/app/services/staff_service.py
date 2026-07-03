@@ -12,7 +12,7 @@ from beanie import PydanticObjectId
 from app.models.cliente import Cliente
 from app.models.enums import CanalCanje
 from app.models.relacion import RelacionClienteEmpresa
-from app.services import canje_service, cliente_service, cupon_service, visita_service
+from app.services import canje_service, cliente_service, cupon_validacion_service, visita_service
 
 
 async def buscar_por_codigo(
@@ -40,7 +40,7 @@ async def info_cliente(empresa_id: PydanticObjectId, codigo_cliente: str) -> dic
     if not par:
         return None
     cliente, relacion = par
-    cupones = await cupon_service.listar_cupones_disponibles_cliente(empresa_id, cliente.id)
+    cupones = await cupon_validacion_service.listar_cupones_disponibles_cliente(empresa_id, cliente.id)
     canjes = (await canje_service.listar_canjes_cliente(empresa_id, cliente.id))[:3]
     return {"cliente": cliente, "relacion": relacion, "cupones": cupones, "canjes": canjes}
 

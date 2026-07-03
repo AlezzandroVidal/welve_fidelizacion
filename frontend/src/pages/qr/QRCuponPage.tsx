@@ -108,7 +108,7 @@ export default function QRCuponPage() {
   }
 
   // ESTADO 2 — Listo para validar
-  const requiereVip = cupon.exclusivo && cliente.segmento !== "exclusivo";
+  const requiereVip = cupon.visibilidad === "vip" && cliente.segmento !== "exclusivo";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
@@ -122,7 +122,7 @@ export default function QRCuponPage() {
           <p className="text-lg font-bold text-gray-900">{cupon.nombre}</p>
           {cupon.valor !== null && (
             <p className="mt-1 text-2xl font-black text-welve-700">
-              {cupon.tipo === "descuento_porcentual" ? `${cupon.valor}%` : `S/ ${cupon.valor}`}
+              {cupon.tipo === "porcentual" ? `${cupon.valor}%` : `S/ ${cupon.valor}`}
             </p>
           )}
         </div>

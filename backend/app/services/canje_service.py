@@ -4,8 +4,7 @@ from beanie import PydanticObjectId
 
 from app.models.canje import Canje
 from app.models.enums import CanalCanje
-from app.models.relacion import RelacionClienteEmpresa
-from app.services import cupon_service
+from app.services import cliente_service, cupon_service, cupon_validacion_service
 
 
 async def crear_canje(
@@ -28,6 +27,10 @@ async def crear_canje(
     retos, recompensas automáticas— a visita_service.registrar_visita() para no
     contar la visita dos veces.
 
+    Cuando registrar_visita=True, la RelacionClienteEmpresa se crea si no
+    existía (afiliación como efecto secundario del canje, no un prerequisito
+    — ver routers/canjes.py, el flujo de canje manual por staff).
+
     `monto` es el monto de la compra que dio pie a este canje — se valida contra
     cupon.monto_minimo. Los canjes automáticos (canal=automatico: recompensas por
     visitas/retos) no representan una compra en curso, así que no exigen monto
@@ -37,7 +40,7 @@ async def crear_canje(
     if not cupon:
         return None, "Cupón no encontrado en esta empresa"
 
-    ok, motivo = cupon_service.es_canjeable(cupon, monto)
+    ok, motivo = cupon_validacion_service.es_canjeable(cupon, monto)
     if not ok:
         return None, motivo
     if canal != CanalCanje.automatico and cupon.monto_minimo is not None and monto is None:
@@ -66,20 +69,17 @@ async def crear_canje(
     # Actualizar usos del cupón
     await cupon.set({"usos_actuales": cupon.usos_actuales + 1, "updated_at": datetime.now(timezone.utc)})
 
-    # Actualizar RelacionClienteEmpresa
+    # Actualizar RelacionClienteEmpresa — se crea si no existía (afiliación
+    # como efecto secundario del canje, ver docstring arriba).
     if registrar_visita:
-        relacion = await RelacionClienteEmpresa.find_one(
-            RelacionClienteEmpresa.empresa_id == empresa_id,
-            RelacionClienteEmpresa.cliente_id == cliente_id,
-        )
-        if relacion:
-            now = datetime.now(timezone.utc)
-            await relacion.set({
-                "visitas_totales": relacion.visitas_totales + 1,
-                "monto_acumulado": relacion.monto_acumulado + monto if monto else relacion.monto_acumulado,
-                "ultima_visita": now,
-                "updated_at": now,
-            })
+        relacion = await cliente_service.obtener_o_crear_relacion(empresa_id, cliente_id)
+        now = datetime.now(timezone.utc)
+        await relacion.set({
+            "visitas_totales": relacion.visitas_totales + 1,
+            "monto_acumulado": relacion.monto_acumulado + monto if monto else relacion.monto_acumulado,
+            "ultima_visita": now,
+            "updated_at": now,
+        })
 
     return canje, None
 

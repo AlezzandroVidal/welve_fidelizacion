@@ -102,7 +102,7 @@ export default function CanjearCuponCard({ onSuccess, onError }: Props) {
                   </div>
                   {cupon.valor !== null && (
                     <span className="text-sm font-black text-welve-700">
-                      {cupon.tipo === "descuento_porcentual" ? `${cupon.valor}%` : `S/ ${cupon.valor}`}
+                      {cupon.tipo === "porcentual" ? `${cupon.valor}%` : `S/ ${cupon.valor}`}
                     </span>
                   )}
                 </button>

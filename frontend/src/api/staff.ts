@@ -4,6 +4,7 @@ import type { Cupon } from "./cupones";
 import type { Canje } from "./canjes";
 
 export interface ClienteInfoStaff {
+  id: string;
   nombre: string;
   email: string | null;
   whatsapp: string | null;
