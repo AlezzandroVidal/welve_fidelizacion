@@ -34,21 +34,33 @@ export const authApi = {
   registerEmpresa: (data: {
     nombre: string;
     rubro: string;
+    admin_nombre: string;
     admin_email: string;
     admin_password: string;
+    admin_telefono?: string;
+    direccion?: string;
+    descripcion?: string;
   }) => api.post("/empresas/register", data),
 
-  solicitarMagicLink: (empresa_id: string, email?: string, whatsapp?: string, nombre?: string) =>
+  // empresa_id ausente = login global al wallet (no atado a una empresa puntual)
+  solicitarMagicLink: (email?: string, whatsapp?: string, nombre?: string, empresa_id?: string) =>
     api.post<MagicLinkRes>("/auth/cliente/magic-link", { empresa_id, email, whatsapp, nombre }),
 
   verificarMagicLink: (token: string) =>
     api.get<VerifyRes>(`/auth/cliente/verify?token=${token}`),
-    
+
   loginCliente: (email: string, password: string) =>
     api.post<VerifyRes>("/auth/cliente/login", { email, password }),
-    
-  registerCliente: (data: {nombre: string, email: string, password: string, whatsapp?: string}) =>
-    api.post<VerifyRes>("/auth/cliente/register", data),
+
+  registerCliente: (data: {
+    nombre: string;
+    apellido: string;
+    email?: string;
+    whatsapp?: string;
+    password?: string;
+    fecha_nacimiento?: string;
+    genero?: string;
+  }) => api.post<VerifyRes>("/auth/cliente/register", data),
 
   loginAdmin: (email: string, password: string) =>
     api.post("/admin/auth/login", { email, password }),

@@ -8,8 +8,12 @@ from app.models.enums import EstadoEmpresa, PlanSuscripcion, RubroEmpresa
 class EmpresaRegister(BaseModel):
     nombre: str
     rubro: RubroEmpresa
+    admin_nombre: str
     admin_email: EmailStr
     admin_password: str
+    admin_telefono: str | None = None
+    direccion: str | None = None
+    descripcion: str | None = None
     plan_suscripcion: PlanSuscripcion = PlanSuscripcion.starter
 
 
@@ -29,7 +33,9 @@ class EmpresaResponse(BaseModel):
     facebook: str | None = None
     tiktok: str | None = None
     sitioWeb: str | None = None
+    adminNombre: str
     adminEmail: EmailStr
+    adminTelefono: str | None = None
     planSuscripcion: PlanSuscripcion
     fechaVencimientoPlan: datetime | None = None
     estado: EstadoEmpresa

@@ -15,8 +15,12 @@ async def registrar_empresa(data: EmpresaRegister) -> Empresa:
     empresa = Empresa(
         nombre=data.nombre,
         rubro=data.rubro,
+        admin_nombre=data.admin_nombre,
         admin_email=data.admin_email,
         admin_password_hash=hash_password(data.admin_password),
+        admin_telefono=data.admin_telefono,
+        direccion=data.direccion,
+        descripcion=data.descripcion,
         plan_suscripcion=data.plan_suscripcion,
     )
     await empresa.insert()

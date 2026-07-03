@@ -45,6 +45,10 @@ class Empresa(Document):
     sitio_web: str | None = None
     admin_email: Indexed(EmailStr, unique=True)
     admin_password_hash: str
+    # Default "" (no Optional): empresas sembradas antes de este campo lo leen
+    # como string vacío en vez de fallar la validación de Beanie al cargarlas.
+    admin_nombre: str = ""
+    admin_telefono: str | None = None
     plan_suscripcion: PlanSuscripcion = PlanSuscripcion.starter
     fecha_vencimiento_plan: datetime | None = None
     estado: EstadoEmpresa = EstadoEmpresa.activo

@@ -135,6 +135,9 @@ Schema completo, tipos de campo, índices y enums en `DATABASE.MD`. Resumen de c
 | `movimientos_inventario` | Sí | historial inmutable de entradas/salidas/ajustes de stock de un `Producto` |
 | `ventas` | Sí | registro inmutable de cada venta procesada en Caja (snapshot de items, método de pago, cupón aplicado) |
 | `pagos` | Sí | pago de la **suscripción de la empresa a Welve** (plan Starter/Growth/Pro) — no confundir con `ventas` |
+| `cupones_desbloqueados` | Sí | que un cliente desbloqueó un cupón `por_reto`/`por_requisito` pero no necesariamente canjeó — ver motor de cupones flexibles abajo |
+| `notificaciones` | No (por cliente) | notificaciones en-app persistidas (campana en `WalletLayout`); distinto de los recordatorios WhatsApp/email efímeros del worker |
+| `historial_visitas` | Sí | log con fecha+monto de cada visita/venta, para progreso por período (ej. "3 visitas en 30 días") — `RelacionClienteEmpresa` solo tiene totales acumulados |
 | `welve_admins` | No (global) | staff interno de Welve (superadmin / soporte) |
 
 Todos los enums de dominio están centralizados en `app/models/enums.py`
@@ -207,6 +210,29 @@ cliente por `codigo_cliente` o escaneando su QR personal (`GET /wallet/mi-qr/{em
 1. `app/db/mongodb.py` → lista `document_models` del `init_beanie()`
 2. `app/main.py` → `app.include_router(..., prefix="/api/v1")`
 
+**Motor de cupones flexibles** (`Cupon.visibilidad`: `publico` / `vip` / `por_reto` / `por_requisito` /
+`privado`) — no confundir con las recompensas automáticas de `recompensas_engine.py`, que otorgan y
+canjean un `Cupon` en el mismo paso (`canal=automatico` en `Canje`). Acá el cupón solo se **desbloquea**
+(crea un `CuponDesbloqueado`); el cliente todavía tiene que mostrar su QR para que staff lo canje:
+- `services/cupon_acceso_service.py` — solo lectura: `evaluar_acceso_cupon()` calcula si un cliente
+  puede ver/canjear un cupón dado y su progreso (`progreso_condicion_cupon()`, delega en
+  `services/progreso_service.py` para leer `HistorialVisita` cuando la condición es por período).
+  Un cupón `por_reto` referencia un `Reto` vía `Cupon.reto_id`; uno `por_requisito` trae su propia
+  condición inline en `Cupon.requisito` (`RequisitoAcceso`), sin depender de un `Reto`.
+- `services/cupon_desbloqueo_service.py` — solo escritura: `desbloquear_cupon()` (idempotente por el
+  índice único `(cliente_id, cupon_id)` de `CuponDesbloqueado`, evita duplicados en carreras) y
+  `verificar_y_desbloquear_cupones()`, llamado una vez tras cada visita/venta desde
+  `visita_service._evaluar_y_actualizar()`. Si `Cupon.notificar_al_desbloquear`, crea una `Notificacion`.
+- `services/cupon_validacion_service.py` — `es_canjeable()`: vigencia/estado/límite de usos/monto
+  mínimo, compartido tanto por el flujo de desbloqueo como por el canje final en `canje_service`.
+- `services/notificacion_service.py` — CRUD de lectura de `Notificacion` (listar no leídas, marcar
+  leída); solo `cupon_desbloqueo_service` las crea.
+
+Estos tres archivos de cupones (y `recompensas_engine.py`) están deliberadamente separados por una
+**convención del proyecto: ningún archivo de servicio debe superar ~200 líneas** — así se dividió lo
+que en otro repo sería un solo `cupon_service.py` gigante. Al extender esta lógica, seguir el mismo
+criterio de split (lectura vs. escritura vs. validación) en vez de amontonar todo en un archivo.
+
 ## Autenticación — tres roles separados
 
 Los tres tipos de token JWT nunca deben mezclarse entre sí:
@@ -244,6 +270,9 @@ El frontend almacena el token en `localStorage["welve_token"]`.
 - **Nombres**: snake_case en Python y en campos de Mongo; camelCase en TypeScript/React.
 - **Formularios (frontend)**: `react-hook-form` + `zod` (`@hookform/resolvers/zod`), schema `z.object` definido
   inline en el propio componente (no hay carpeta centralizada de schemas) — ver `pages/auth/LoginPage.tsx`.
+- **Tamaño de archivo (backend)**: los servicios se mantienen bajo ~200 líneas por convención; un
+  servicio que crece de más se divide por responsabilidad (lectura/escritura/validación) en vez de
+  seguir creciendo — ver el motor de cupones flexibles arriba como ejemplo del patrón.
 
 ## Estructura del proyecto
 

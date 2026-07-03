@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useNavigate } from "react-router-dom";
 import { ChevronRight, LogOut, Menu, X } from "lucide-react";
+import logoWelveFull from "../../resources/logo_welve.svg";
+import logoWelveIcon from "../../resources/logo_welve_icon.png";
 
 export const SIDEBAR_W = 240;
 export const SIDEBAR_W_COLLAPSED = 64;
@@ -204,16 +206,10 @@ function SidebarContent({
     <div className="flex h-full flex-col bg-[#1E1B2E]">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-4">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-welve-500">
-          <span className="text-sm font-black text-white">W</span>
-        </div>
-        {!collapsed && (
-          <span
-            className="text-base font-black"
-            style={{ background: "linear-gradient(135deg, #7C5CFC, #5B3FD4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
-          >
-            Welve
-          </span>
+        {collapsed ? (
+          <img src={logoWelveIcon} alt="Welve" className="h-10 w-10 flex-shrink-0 object-contain" />
+        ) : (
+          <img src={logoWelveFull} alt="Welve" className="h-10 w-auto flex-shrink-0 object-contain" />
         )}
         {onClose && (
           <button onClick={onClose} className="ml-auto text-gray-400 hover:text-white transition-colors">

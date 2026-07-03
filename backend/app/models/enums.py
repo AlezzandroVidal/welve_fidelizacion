@@ -5,7 +5,18 @@ class RubroEmpresa(str, Enum):
     food_beverage = "food_beverage"
     belleza = "belleza"
     retail = "retail"
+    fitness = "fitness"
+    educacion = "educacion"
+    salud = "salud"
+    entretenimiento = "entretenimiento"
     otro = "otro"
+
+
+class Genero(str, Enum):
+    M = "M"
+    F = "F"
+    otro = "otro"
+    prefiero_no_decir = "prefiero_no_decir"
 
 
 class PlanSuscripcion(str, Enum):
