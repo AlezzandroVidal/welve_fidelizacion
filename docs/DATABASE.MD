@@ -5,6 +5,16 @@
 > Todas las colecciones con datos de una empresa llevan `empresa_id` (regla de
 > multi-tenancy, ver PRODUCTO.md sección 4). Los índices compuestos siempre
 > empiezan por `empresa_id`.
+>
+> **Cobertura parcial**: este documento detalla campo por campo las primeras
+> 8 colecciones del proyecto (`empresas` hasta `canjes`). Las que se
+> agregaron después — `resenas`, `productos`, `movimientos_inventario`,
+> `ventas`, `pagos`, `cupones_desbloqueados`, `notificaciones`,
+> `historial_visitas`, `welve_admins` — todavía no tienen su sección de
+> detalle acá; están listadas (propósito + tenant-scoping) en la tabla de
+> `CLAUDE.md` § Modelo de datos, y sus campos clave en el ER de
+> [`docs/ARQUITECTURA.md`](./ARQUITECTURA.md). Fuente de verdad exacta
+> siempre: los modelos Beanie en `backend/app/models/`.
 
 ---
 
@@ -99,21 +109,40 @@ El corazón del engine de fidelización. Una fila por par (cliente, empresa).
 | `id` | `PydanticObjectId` | |
 | `empresa_id` | `Indexed(PydanticObjectId)` | |
 | `nombre` | `str` | |
-| `tipo` | `enum TipoCupon` | `descuento_porcentual`, `descuento_fijo`, `producto_gratis`, `dos_por_uno` |
-| `valor` | `Optional[float]` | requerido si tipo es descuento_*, `None` si producto_gratis/2x1 |
-| `monto_minimo` | `Optional[float]` | condición de compra mínima |
-| `fecha_inicio` | `datetime` | |
-| `fecha_expiracion` | `datetime` | |
+| `codigo` | `Optional[Indexed(str, unique=True, sparse=True)]` | corto, ej. `CUP-4F2A` — identifica el cupón en Caja sin buscar por nombre. Puede ser `None` en cupones creados antes de este campo |
+| `tipo` | `enum TipoCupon` | `porcentual`, `monto_fijo`, `producto_gratis`, `dos_por_uno`, `n_por_m`, `envio_gratis`, `personalizado` |
+| `valor` | `Optional[float]` | `None` válido solo para `producto_gratis`/`dos_por_uno`/`envio_gratis`/`personalizado` |
+| `cantidad_paga` / `cantidad_lleva` | `Optional[int]` | solo para `tipo=n_por_m` (ej. 3×2 → paga=2, lleva=3) |
+| `producto_gratis_id` | `Optional[PydanticObjectId]` | producto que se da gratis, o el que entra en la promo si aplica a uno específico |
+| `monto_minimo` | `Optional[float]` | condición de compra mínima, por compra individual |
+| `fecha_inicio` / `fecha_expiracion` | `datetime` | |
 | `estado` | `enum EstadoCupon` | `activo`, `pausado`, `expirado` |
 | `limite_usos_total` | `Optional[int]` | `None` = ilimitado |
-| `limite_usos_por_cliente` | `Optional[int]` | default sugerido: `1` |
+| `limite_usos_por_cliente` | `Optional[int] = 1` | |
 | `usos_actuales` | `int = 0` | incrementado en cada `Canje` |
-| `exclusivo` | `bool = False` | visible solo para `segmento = exclusivo` (sección 6.4 de PRODUCTO.md) |
+| `aplica_a` | `enum AplicaCupon` | `todo` / `productos_especificos` / `categoria` — restricción para el módulo Caja; si es `todo`, ignora los dos campos siguientes |
+| `productos_validos` | `list[PydanticObjectId]` | |
+| `categorias_validas` | `list[str]` | |
+| `monto_minimo_carrito` | `Optional[float]` | sobre el total del carrito en Caja — distinto de `monto_minimo` (por compra individual) |
+| `visibilidad` | `enum AccesoVisibilidad` | `publico` / `vip` / `por_reto` / `por_requisito` / `privado` — **reemplaza al viejo campo `exclusivo: bool`**; `vip` conserva la misma semántica (gate por `segmento=exclusivo`) |
+| `reto_id` | `Optional[PydanticObjectId]` | si `visibilidad=por_reto`: qué `Reto` lo desbloquea |
+| `requisito` | `Optional[RequisitoAcceso]` (embebido) | si `visibilidad=por_requisito`: `{tipo, valor, periodo_dias?, producto_objetivo_id?, categoria_objetivo?}` — condición inline, sin depender de un `Reto` |
+| `notificar_al_desbloquear` | `bool = True` | |
+| `mensaje_notificacion` | `Optional[str]` | `None` → mensaje default en `cupon_acceso_service` |
+| `destacado` | `bool = False` | la empresa lo marca a mano para promocionarlo en el inicio del cliente |
+| `imagen_url`, `terminos_condiciones`, `descripcion_larga`, `instrucciones_canje`, `tags`, `color_tema` | — | contenido de presentación en el wallet del cliente |
 | `created_at` / `updated_at` | `datetime` | |
 
 **Índice compuesto:** `(empresa_id, estado)` — listado del panel admin y del wallet del cliente.
 
-**Regla de servicio (no de schema):** un cupón con `fecha_expiracion < now()` nunca debe ser canjeable aunque su `estado` siga en `activo` — esto se valida en `services/cupon_service.py`, no se asume desde el campo `estado` solamente.
+**Regla de servicio (no de schema):** un cupón con `fecha_expiracion < now()` nunca debe ser canjeable aunque su `estado` siga en `activo` — esto se valida en `services/cupon_validacion_service.py`, no se asume desde el campo `estado` solamente.
+
+**Desbloqueo vs. canje:** un cupón `por_reto`/`por_requisito` primero se
+**desbloquea** (crea un `CuponDesbloqueado`, colección aparte — ver nota al
+final de este documento) cuando el cliente cumple la condición; el cliente
+igual tiene que mostrar su QR al staff para el canje final. Ver
+[`docs/REGLAS_NEGOCIO.md`](./REGLAS_NEGOCIO.md) § Cupones para el flujo
+completo.
 
 ---
 

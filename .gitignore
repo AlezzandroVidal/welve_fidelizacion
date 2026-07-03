@@ -58,6 +58,11 @@ Thumbs.db
 .claude/
 .mcp.json
 
+# Instrucciones para agentes de IA — quedan solo locales, a pedido del
+# usuario. El contenido "de producto/empresa" que tenían vive en docs/.
+CLAUDE.md
+AGENTS.md
+
 # Docs privados — nunca a git (credenciales reales de cuentas/servicios)
 docs/CUENTAS_Y_ACCESOS.md
 

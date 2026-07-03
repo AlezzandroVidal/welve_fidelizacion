@@ -13,7 +13,7 @@
 ## Checklist
 
 - [ ] Los tests pasan (`pytest` / `npm test`)
-- [ ] El código sigue las convenciones del proyecto (ver CONTRIBUTING.md)
+- [ ] El código sigue las convenciones del proyecto (ver [docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md))
 - [ ] Actualicé la documentación si fue necesario
 - [ ] Probé los cambios localmente con `docker compose up`
 

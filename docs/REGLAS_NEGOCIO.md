@@ -1,7 +1,7 @@
 # Reglas de negocio — Welve
 
 > Resumen funcional pensado para lectura rápida. La fuente de verdad
-> detallada de reglas es [`PRODUCT.MD`](../PRODUCT.MD) (raíz del repo); este
+> detallada de reglas es [`PRODUCT.MD`](./PRODUCT.MD) (misma carpeta); este
 > documento la reorganiza por módulo y agrega los flujos principales.
 
 ## Resumen ejecutivo
