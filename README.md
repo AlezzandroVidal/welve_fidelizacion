@@ -4,7 +4,7 @@
 | | |
 |---|---|
 | 👨‍💻 **Desarrollador** | Marco Alessandro Vidal Chumacero |
-| 👩‍💻 **Desarrolladora** | Angelica Arias Alvarez |
+| 👩‍💻 **Desarrolladora y Documentación técnica** | Angelica Arias Alvarez |
 | 🛠️ **Asistencia IA** | Claude Code (Anthropic) |
 | 🏫 **Modalidad** | Proyecto Integrador Académico — Modalidad A |
 | ☁️ **Entorno** | GitHub Codespaces |
