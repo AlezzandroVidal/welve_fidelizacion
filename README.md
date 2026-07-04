@@ -1,4 +1,14 @@
 # Welve — Plataforma SaaS B2B de Fidelización
+## Créditos
+
+| | |
+|---|---|
+| 👨‍💻 **Desarrollador** | Marco Alessandro Vidal Chumacero |
+| 👩‍💻 **Desarrolladora** | Angelica Arias Alvarez |
+| 🛠️ **Asistencia IA** | Claude Code (Anthropic) |
+| 🏫 **Modalidad** | Proyecto Integrador Académico — Modalidad A |
+| ☁️ **Entorno** | GitHub Codespaces |
+
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)
@@ -6,6 +16,7 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
 ![Railway](https://img.shields.io/badge/Deploy-Railway-purple)
 ![Docker](https://img.shields.io/badge/Docker-Hub-blue)
+
 
 ## Descripción
 
