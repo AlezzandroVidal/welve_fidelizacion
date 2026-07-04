@@ -2,9 +2,15 @@ from datetime import datetime, timezone
 
 from beanie import PydanticObjectId
 
+from app.core.cache import cache_delete, cache_delete_pattern
 from app.models.canje import Canje
 from app.models.enums import CanalCanje
 from app.services import cliente_service, cupon_service, cupon_validacion_service
+
+# Límite defensivo para listas que crecen indefinidamente con la actividad del
+# negocio (a diferencia de "mis cupones configurados", que se mantiene chico
+# por naturaleza) — a esta escala no hace falta paginación real todavía.
+LIMITE_HISTORIAL = 200
 
 
 async def crear_canje(
@@ -81,15 +87,19 @@ async def crear_canje(
             "updated_at": now,
         })
 
+    await cache_delete(f"metricas:resumen:{empresa_id}")
+    await cache_delete_pattern(f"metricas:canjes_por_dia:{empresa_id}:*")
+    await cache_delete_pattern(f"metricas:top_cupones:{empresa_id}:*")
+
     return canje, None
 
 
 async def listar_canjes_empresa(empresa_id: PydanticObjectId) -> list[Canje]:
-    return await Canje.find(Canje.empresa_id == empresa_id).sort("-fecha").to_list()
+    return await Canje.find(Canje.empresa_id == empresa_id).sort("-fecha").limit(LIMITE_HISTORIAL).to_list()
 
 
 async def listar_canjes_cliente(empresa_id: PydanticObjectId, cliente_id: PydanticObjectId) -> list[Canje]:
     return await Canje.find(
         Canje.empresa_id == empresa_id,
         Canje.cliente_id == cliente_id,
-    ).sort("-fecha").to_list()
+    ).sort("-fecha").limit(LIMITE_HISTORIAL).to_list()
