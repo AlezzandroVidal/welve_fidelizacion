@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from beanie import PydanticObjectId
 
+from app.core.cache import cache_delete, cache_delete_pattern
 from app.core.security import create_access_token
 from app.models.empresa import Empresa
 from app.models.historial_visita import HistorialVisita
@@ -109,6 +110,9 @@ async def registrar_visita(
     # (ver cupon_acceso_service / recompensas_engine). Mismo punto exacto donde
     # se actualizan los totales, para que nunca queden desincronizados.
     await HistorialVisita(empresa_id=empresa_id, cliente_id=cliente_id, fecha=now, monto=monto).insert()
+
+    await cache_delete(f"metricas:resumen:{empresa_id}")
+    await cache_delete_pattern(f"metricas:clientes_nuevos:{empresa_id}:*")
 
     return await _evaluar_y_actualizar(empresa, relacion, cliente_id, ultima_visita_anterior)
 

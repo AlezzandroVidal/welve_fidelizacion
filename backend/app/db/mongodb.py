@@ -6,6 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import ServerSelectionTimeoutError
 
 from app.core.config import settings
+from app.db.indexes import crear_indices
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ async def init_db() -> None:
                     HistorialVisita,
                 ],
             )
+            await crear_indices(client[settings.mongo_db])
             logger.info("Conexión a MongoDB exitosa.")
             return
         except (ServerSelectionTimeoutError, Exception) as e:

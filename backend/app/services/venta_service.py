@@ -12,6 +12,9 @@ from app.schemas.venta import ItemCarritoInput
 from app.services import canje_service, cupon_acceso_service, cupon_service, cupon_validacion_service, producto_service, visita_service
 
 IGV_TASA = 0.18
+# Límite defensivo para el historial — crece indefinidamente con la
+# actividad del negocio, a diferencia del catálogo de productos.
+LIMITE_HISTORIAL = 200
 
 
 def _calcular_descuento(cupon: Cupon, subtotal: float, items_calc: list[dict]) -> float:
@@ -278,11 +281,16 @@ async def historial_ventas(
         query = query.find(Venta.cliente_id == cliente_id)
     if metodo_pago is not None:
         query = query.find(Venta.metodo_pago == metodo_pago)
+    # Antes se filtraba en Python después de traer todo — movido a la query
+    # (sintaxis de dict, no el operador == de Beanie, para no depender de
+    # cómo resuelve la comparación con None) para que el LIMIT de abajo no
+    # trunque resultados antes de aplicar este filtro.
+    if con_cupon is True:
+        query = query.find({"cupon_id": {"$ne": None}})
+    elif con_cupon is False:
+        query = query.find({"cupon_id": None})
 
-    ventas = await query.sort("-created_at").to_list()
-    if con_cupon is not None:
-        ventas = [v for v in ventas if (v.cupon_id is not None) == con_cupon]
-    return ventas
+    return await query.sort("-created_at").limit(LIMITE_HISTORIAL).to_list()
 
 
 async def resumen_ventas(empresa_id: PydanticObjectId) -> dict[str, Any]:

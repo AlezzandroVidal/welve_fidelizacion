@@ -2,14 +2,24 @@ from datetime import datetime, timedelta, timezone
 
 from beanie import PydanticObjectId
 
+from app.core.cache import cache_get, cache_set
 from app.models.canje import Canje
 from app.models.cupon import Cupon
 from app.models.enums import EstadoCupon
 from app.models.relacion import RelacionClienteEmpresa
 from app.schemas.metricas import PuntoTiempo, ResumenResponse, TopCupon
 
+# TTL corto (5 min): el dashboard no necesita el segundo exacto, y así una
+# racha de refrescos de pantalla no re-agrega toda la colección cada vez.
+CACHE_TTL = 300
+
 
 async def obtener_resumen(empresa_id: PydanticObjectId) -> ResumenResponse:
+    cache_key = f"metricas:resumen:{empresa_id}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return ResumenResponse(**cached)
+
     now = datetime.now(timezone.utc)
     start_hoy = now.replace(hour=0, minute=0, second=0, microsecond=0)
     start_semana = now - timedelta(days=7)
@@ -52,7 +62,7 @@ async def obtener_resumen(empresa_id: PydanticObjectId) -> ResumenResponse:
 
     tasa = round((canjes_mes / total_clientes) * 100, 1) if total_clientes > 0 else 0.0
 
-    return ResumenResponse(
+    resultado = ResumenResponse(
         total_clientes=total_clientes,
         canjes_hoy=canjes_hoy,
         canjes_semana=canjes_semana,
@@ -62,9 +72,16 @@ async def obtener_resumen(empresa_id: PydanticObjectId) -> ResumenResponse:
         clientes_recurrentes=clientes_recurrentes,
         racha_promedio=racha_promedio,
     )
+    await cache_set(cache_key, resultado.model_dump(), CACHE_TTL)
+    return resultado
 
 
 async def canjes_por_dia(empresa_id: PydanticObjectId, dias: int) -> list[PuntoTiempo]:
+    cache_key = f"metricas:canjes_por_dia:{empresa_id}:{dias}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return [PuntoTiempo(**r) for r in cached]
+
     start = datetime.now(timezone.utc) - timedelta(days=dias)
     pipeline = [
         {"$match": {"empresa_id": empresa_id, "fecha": {"$gte": start}}},
@@ -76,19 +93,33 @@ async def canjes_por_dia(empresa_id: PydanticObjectId, dias: int) -> list[PuntoT
         {"$project": {"fecha": "$_id", "cantidad": 1, "_id": 0}},
     ]
     rows = await Canje.aggregate(pipeline).to_list()
-    return [PuntoTiempo(**r) for r in rows]
+    resultado = [PuntoTiempo(**r) for r in rows]
+    await cache_set(cache_key, [r.model_dump() for r in resultado], CACHE_TTL)
+    return resultado
 
 
 async def top_cupones(empresa_id: PydanticObjectId, limit: int) -> list[TopCupon]:
+    cache_key = f"metricas:top_cupones:{empresa_id}:{limit}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return [TopCupon(**r) for r in cached]
+
     cupones = await Cupon.find(Cupon.empresa_id == empresa_id) \
         .sort(-Cupon.usos_actuales).limit(limit).to_list()
-    return [
+    resultado = [
         TopCupon(cupon_id=str(c.id), nombre=c.nombre, tipo=c.tipo, usos_actuales=c.usos_actuales)
         for c in cupones
     ]
+    await cache_set(cache_key, [r.model_dump() for r in resultado], CACHE_TTL)
+    return resultado
 
 
 async def clientes_nuevos_por_dia(empresa_id: PydanticObjectId, dias: int) -> list[PuntoTiempo]:
+    cache_key = f"metricas:clientes_nuevos:{empresa_id}:{dias}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return [PuntoTiempo(**r) for r in cached]
+
     start = datetime.now(timezone.utc) - timedelta(days=dias)
     pipeline = [
         {"$match": {"empresa_id": empresa_id, "created_at": {"$gte": start}}},
@@ -100,4 +131,6 @@ async def clientes_nuevos_por_dia(empresa_id: PydanticObjectId, dias: int) -> li
         {"$project": {"fecha": "$_id", "cantidad": 1, "_id": 0}},
     ]
     rows = await RelacionClienteEmpresa.aggregate(pipeline).to_list()
-    return [PuntoTiempo(**r) for r in rows]
+    resultado = [PuntoTiempo(**r) for r in rows]
+    await cache_set(cache_key, [r.model_dump() for r in resultado], CACHE_TTL)
+    return resultado
